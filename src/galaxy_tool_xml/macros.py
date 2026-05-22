@@ -1,0 +1,133 @@
+"""Galaxy macro detection, stripping, and expansion.
+
+This is the **only** module that imports ``galaxy.util.xml_macros``, isolating
+the coupling to Galaxy's internal API behind a single adapter. Every exception
+raised by that internal API is caught here and converted to a ``MacroError`` —
+a Galaxy exception never escapes this module.
+
+The Galaxy tool XSD is a *post-macro-expansion* schema, so ``validate_tool``
+transforms a tool through these functions into a throwaway copy before
+validating. The throwaway tree's loss of comments and whitespace (Galaxy's
+parser strips them) does not matter — it is used only for validation.
+"""
+
+from __future__ import annotations
+
+import copy
+import logging
+import shutil
+import tempfile
+from dataclasses import dataclass
+from pathlib import Path
+
+from galaxy.util.xml_macros import imported_macro_paths, load_with_references
+from lxml import etree
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class MacroError:
+    """A single macro-expansion failure (cycle, missing macro, bad ``<import>``)."""
+
+    message: str
+    source: str | None = None
+
+    def __str__(self) -> str:
+        message = " ".join(self.message.split())
+        if self.source:
+            return f"{self.source}: {message}"
+        return message
+
+
+def has_macros(root: etree._Element) -> bool:
+    """Return whether the tree uses macros — any ``<expand>`` or a ``<macros>``."""
+    if root.find("macros") is not None:
+        return True
+    return root.find(".//expand") is not None
+
+
+def strip_macros(tree: etree._ElementTree) -> etree._ElementTree:
+    """Return a deep copy with every ``<expand>`` and ``<macros>`` removed.
+
+    The input tree is never modified.
+    """
+    copied = copy.deepcopy(tree)
+    root = copied.getroot()
+    for tag in ("expand", "macros"):
+        for element in list(root.iter(tag)):
+            parent = element.getparent()
+            if parent is not None:
+                parent.remove(element)
+    return copied
+
+
+def expand_from_path(
+    path: Path,
+) -> tuple[etree._ElementTree | None, list[MacroError]]:
+    """Expand a tool's macros, reading it and its ``<import>``s from disk.
+
+    ``<import>``s resolve against the file's own directory. Returns the expanded
+    tree (or ``None`` on failure) and any errors.
+    """
+    try:
+        expanded, _imported = load_with_references(str(path))
+    except Exception as error:  # noqa: BLE001 — adapter boundary for an internal API
+        logger.warning("macro expansion failed for %s: %s", path, error)
+        return None, [MacroError(f"macro expansion failed: {error}", source=str(path))]
+    return expanded, []
+
+
+def expand_from_tree(
+    root: etree._Element, *, source_dir: Path | None
+) -> tuple[etree._ElementTree | None, list[MacroError]]:
+    """Expand the macros of an in-memory (possibly mutated) tool tree.
+
+    The tree is serialised to a temp directory; each ``<import>``ed macro file
+    is copied in beside it, resolved against ``source_dir``. With
+    ``source_dir=None`` external ``<import>``s cannot be resolved — inline
+    macros still expand and a ``MacroError`` records the limitation.
+    """
+    errors: list[MacroError] = []
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_dir = Path(tmp)
+        tool_path = tmp_dir / "tool.xml"
+        tool_path.write_bytes(etree.tostring(root))
+        for relative in imported_macro_paths(root):
+            errors.extend(
+                _stage_import(relative, source_dir=source_dir, tmp_dir=tmp_dir)
+            )
+        try:
+            expanded, _imported = load_with_references(str(tool_path))
+        except Exception as error:  # noqa: BLE001 — adapter boundary for an internal API
+            logger.warning("macro expansion failed for in-memory tree: %s", error)
+            errors.append(MacroError(f"macro expansion failed: {error}"))
+            return None, errors
+    return expanded, errors
+
+
+def _stage_import(
+    relative: str, *, source_dir: Path | None, tmp_dir: Path
+) -> list[MacroError]:
+    """Copy one ``<import>``ed macro file into the temp directory."""
+    relative_path = Path(relative)
+    if relative_path.is_absolute() or ".." in relative_path.parts:
+        return [
+            MacroError(
+                f"cannot stage <import> {relative!r}: path escapes the tool directory"
+            )
+        ]
+    if source_dir is None:
+        return [
+            MacroError(
+                f"cannot resolve <import> {relative!r}: "
+                "in-memory input has no source directory"
+            )
+        ]
+    source = source_dir / relative_path
+    if not source.exists():
+        return [MacroError(f"imported macro file not found: {source}")]
+    destination = tmp_dir / relative_path
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(source, destination)
+    return []

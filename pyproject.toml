@@ -1,0 +1,48 @@
+[project]
+name = "galaxy-tool-xml"
+version = "0.1.0"
+description = "Foundation library for parsing, profile-aware validation, and typed inspection of Galaxy tool XML"
+authors = [{ name = "Richard Burhans", email = "richard.burhans@gmail.com" }]
+license = "MIT"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "xsdata[lxml]>=26.2",
+    "lxml>=5",             # declared explicitly: galaxy-util needs lxml but does not declare it
+    "click>=8",
+    "galaxy-util>=24,<27", # macro expansion (galaxy.util.xml_macros); internal API -> ranged pin
+    "packaging>=23",       # version comparison; only a transitive dep of galaxy-util otherwise
+]
+
+[project.scripts]
+galaxy-tool-xml = "galaxy_tool_xml.cli:main"
+
+[dependency-groups]
+dev = ["xsdata[cli]>=26.2", "pytest>=8", "ruff", "mypy"]
+
+[build-system]
+requires = ["uv_build>=0.9.26,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["slow: xsdata codegen sweep over every vendored XSD"]
+addopts = "-m 'not slow'"
+
+[tool.ruff]
+src = ["src"]
+target-version = "py310"
+extend-exclude = ["src/galaxy_tool_xml/models"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "PTH"]
+
+[tool.mypy]
+files = ["src"]
+strict = true
+exclude = "src/galaxy_tool_xml/models/"
+
+# lxml and galaxy-util ship no type information.
+[[tool.mypy.overrides]]
+module = ["lxml.*", "galaxy.*"]
+ignore_missing_imports = true
