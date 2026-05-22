@@ -26,7 +26,11 @@ from galaxy_tool_xml.macros import (
     has_macros,
     strip_macros,
 )
-from galaxy_tool_xml.profiles import compiled_schema, resolve_profile
+from galaxy_tool_xml.profiles import (
+    available_profiles,
+    compiled_schema,
+    resolve_profile,
+)
 
 Source = str | Path | bytes | BinaryIO
 
@@ -276,3 +280,34 @@ def validate_tool(
         errors=errors,
         macro_errors=macro_errors,
     )
+
+
+def newest_valid_profile(target: Source | ToolDocument) -> str | None:
+    """Return the newest vendored profile whose XSD the tool satisfies.
+
+    The tool is validated — with macros expanded — against each vendored profile
+    from newest to oldest, and the first profile that validates cleanly is
+    returned. ``None`` means no vendored profile validates, including when the
+    tool is malformed or its macros cannot be expanded.
+
+    The scan stops at the first (newest) profile that validates and assumes
+    nothing about the older ones — a tool's valid profiles are often *not* a
+    contiguous range of releases. It is O(1) when the tool validates at the
+    latest profile, the common case.
+    """
+    # Prefer a filesystem path: validate_tool then resolves macros via
+    # expand_from_path, which follows transitive <import>s. A ToolDocument may
+    # carry a mutated tree, so it is validated as-is.
+    if isinstance(target, (str, Path)):
+        probe: Source | ToolDocument = Path(target)
+    elif isinstance(target, ToolDocument):
+        probe = target
+    else:
+        parsed = parse_tool(target).document
+        if parsed is None:
+            return None
+        probe = parsed
+    for version in reversed(available_profiles()):
+        if validate_tool(probe, profile=version).valid:
+            return version
+    return None

@@ -20,7 +20,7 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
-from galaxy.util.xml_macros import imported_macro_paths, load_with_references
+from galaxy.util.xml_macros import load_with_references
 from lxml import etree
 
 logger = logging.getLogger(__name__)
@@ -93,10 +93,7 @@ def expand_from_tree(
         tmp_dir = Path(tmp)
         tool_path = tmp_dir / "tool.xml"
         tool_path.write_bytes(etree.tostring(root))
-        for relative in imported_macro_paths(root):
-            errors.extend(
-                _stage_import(relative, source_dir=source_dir, tmp_dir=tmp_dir)
-            )
+        errors.extend(_stage_imports(root, source_dir=source_dir, tmp_dir=tmp_dir))
         try:
             expanded, _imported = load_with_references(str(tool_path))
         except Exception as error:  # noqa: BLE001 — adapter boundary for an internal API
@@ -106,19 +103,67 @@ def expand_from_tree(
     return expanded, errors
 
 
+def _import_targets(root: etree._Element) -> list[str]:
+    """Return the macro-file paths a tool or macro-file element ``<import>``s.
+
+    A tool nests imports under ``<tool><macros>``; a macro file lists them as
+    direct children of its root ``<macros>``.
+    """
+    elements = (
+        root.findall("import")
+        if root.tag == "macros"
+        else root.findall("macros/import")
+    )
+    return [
+        element.text.strip()
+        for element in elements
+        if element.text and element.text.strip()
+    ]
+
+
+def _stage_imports(
+    root: etree._Element, *, source_dir: Path | None, tmp_dir: Path
+) -> list[MacroError]:
+    """Copy every macro file the tree imports — directly or transitively.
+
+    Each staged macro file is itself scanned for further ``<import>``s, so a
+    whole chain of macro files (a tool importing ``macros.xml`` that imports
+    ``read_group_macros.xml``, say) all reach the temp directory.
+    """
+    errors: list[MacroError] = []
+    staged: set[str] = set()
+    pending = _import_targets(root)
+    while pending:
+        relative = pending.pop()
+        if relative in staged:
+            continue
+        staged.add(relative)
+        imported_root, stage_errors = _stage_import(
+            relative, source_dir=source_dir, tmp_dir=tmp_dir
+        )
+        errors.extend(stage_errors)
+        if imported_root is not None:
+            pending.extend(_import_targets(imported_root))
+    return errors
+
+
 def _stage_import(
     relative: str, *, source_dir: Path | None, tmp_dir: Path
-) -> list[MacroError]:
-    """Copy one ``<import>``ed macro file into the temp directory."""
+) -> tuple[etree._Element | None, list[MacroError]]:
+    """Copy one ``<import>``ed macro file into the temp directory.
+
+    Returns the staged file's parsed root — so the caller can stage that file's
+    own ``<import>``s — or ``None`` when the file could not be staged or parsed.
+    """
     relative_path = Path(relative)
     if relative_path.is_absolute() or ".." in relative_path.parts:
-        return [
+        return None, [
             MacroError(
                 f"cannot stage <import> {relative!r}: path escapes the tool directory"
             )
         ]
     if source_dir is None:
-        return [
+        return None, [
             MacroError(
                 f"cannot resolve <import> {relative!r}: "
                 "in-memory input has no source directory"
@@ -126,8 +171,14 @@ def _stage_import(
         ]
     source = source_dir / relative_path
     if not source.exists():
-        return [MacroError(f"imported macro file not found: {source}")]
+        return None, [MacroError(f"imported macro file not found: {source}")]
     destination = tmp_dir / relative_path
     destination.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy(source, destination)
-    return []
+    try:
+        staged_root = etree.parse(
+            str(destination), etree.XMLParser(recover=True)
+        ).getroot()
+    except etree.XMLSyntaxError:
+        staged_root = None
+    return staged_root, []

@@ -5,10 +5,10 @@ attribute names, child-element names, and enumerated attribute values, and
 suggests the intended spelling. It only ever *suggests* — it never mutates a
 tool.
 
-The schema vocabulary is read by introspecting the xsdata-generated ``models/``
-rather than re-parsing the XSD. Because the same tag (``param``, ``data``, …)
-means different things under different parents, the tree and the model classes
-are descended in lockstep from the ``Tool`` root.
+The schema vocabulary is read by introspecting the xsdata-generated model for
+the tool's own profile rather than re-parsing the XSD. Because the same tag
+(``param``, ``data``, …) means different things under different parents, the
+tree and the model classes are descended in lockstep from the ``Tool`` root.
 """
 
 from __future__ import annotations
@@ -23,7 +23,8 @@ from functools import cache
 
 from galaxy_tool_xml.binding import Source, parse_tool
 from galaxy_tool_xml.document import ToolDocument
-from galaxy_tool_xml.models import Tool
+from galaxy_tool_xml.models.registry import tool_class
+from galaxy_tool_xml.profiles import resolve_profile
 
 # Macro constructs are not part of the post-expansion schema vocabulary; an
 # un-expanded tool legitimately contains them, so they are never flagged.
@@ -200,5 +201,6 @@ def suggest_corrections(target: Source | ToolDocument) -> list[Correction]:
     if document is None:
         return []
     corrections: list[Correction] = []
-    _walk(document.root, Tool, corrections)
+    model_class = tool_class(resolve_profile(document.profile))
+    _walk(document.root, model_class, corrections)
     return corrections

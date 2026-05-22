@@ -14,5 +14,12 @@ wheels/
 .mypy_cache/
 .ruff_cache/
 
+# Per-version xsdata models — generated at build time by hatch_build.py
+src/galaxy_tool_xml/models/v*/
+src/galaxy_tool_xml/models/any_tool.py
+
+# tools-iuc corpus cache (scripts/corpus_check.py)
+corpus/
+
 # Local, per-developer Claude Code settings
 .claude/settings.local.json
