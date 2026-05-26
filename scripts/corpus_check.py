@@ -222,8 +222,15 @@ def _check_immutable(document: ToolDocument) -> tuple[str, str]:
 
 
 def _check_roundtrip(document: ToolDocument) -> tuple[str, str]:
-    """Serialising the document tree must be idempotent — CDATA/comments kept."""
-    parser = etree.XMLParser(strip_cdata=False)
+    """Serialising the document tree must be idempotent — CDATA/comments kept.
+
+    The re-parse uses ``recover=True`` to match the initial parse: real-world
+    tools occasionally violate the XML spec (e.g., ``--`` inside a comment)
+    in ways lxml's recovery accepts. The meaningful check is therefore that
+    the recovered tree re-serialises and re-recovers to the same bytes, not
+    that a strict re-parse succeeds.
+    """
+    parser = etree.XMLParser(strip_cdata=False, recover=True)
     once = etree.tostring(document.tree)
     twice = etree.tostring(etree.fromstring(once, parser).getroottree())
     if once != twice:
