@@ -47,15 +47,47 @@ def _lenient_class_factory(clazz: type[Any], params: dict[str, Any]) -> Any:
     return clazz(**params)
 
 
+def _patch_xsdata_primitive_node_leniency() -> None:
+    """Make xsdata's ``PrimitiveNode.child`` skip unexpected child elements.
+
+    The Galaxy XSD declares some elements (notably text-style fields) as
+    primitive ``xs:string`` content, but real-world tools sometimes embed
+    HTML-like markup inside them (``<i>``, ``<b>``, anchors). Stock xsdata
+    raises ``XmlContextError`` on any such child, which would propagate out
+    of ``ToolDocument.model()``. Return ``SkipNode()`` instead so the
+    unexpected child and its descendants are silently skipped. The lxml
+    tree (the source of truth) still carries the markup verbatim; the
+    typed model just lacks it.
+
+    Idempotent; ``_xml_parser`` is ``@cache``-d so this runs at most once.
+    """
+    from xsdata.formats.dataclass.parsers.mixins import XmlNode
+    from xsdata.formats.dataclass.parsers.nodes.primitive import PrimitiveNode
+    from xsdata.formats.dataclass.parsers.nodes.skip import SkipNode
+
+    def _lenient_child(
+        _self: PrimitiveNode,
+        _qname: str,
+        _attrs: dict[Any, Any],
+        _ns_map: dict[Any, Any],
+        _position: int,
+    ) -> XmlNode:
+        return SkipNode()  # type: ignore[no-untyped-call]
+
+    PrimitiveNode.child = _lenient_child  # type: ignore[assignment]
+
+
 @cache
 def _xml_parser() -> XmlParser:
     """Return a shared, lenient xsdata parser (cached after first call).
 
-    The parser is lenient on unknown elements and attributes, and fills omitted
-    required fields (see ``_lenient_class_factory``), so binding never fails on a
-    tool that diverges from its profile's model — for instance an un-expanded
-    tool still carrying macro elements.
+    The parser is lenient on unknown elements and attributes, fills omitted
+    required fields (see ``_lenient_class_factory``), and is patched so
+    unexpected children inside primitive nodes are skipped rather than
+    raising (see ``_patch_xsdata_primitive_node_leniency``). Binding never
+    fails on a tool that diverges from its profile's model.
     """
+    _patch_xsdata_primitive_node_leniency()
     config = ParserConfig(
         fail_on_unknown_properties=False,
         fail_on_unknown_attributes=False,
