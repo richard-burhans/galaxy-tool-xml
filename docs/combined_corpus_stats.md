@@ -18,8 +18,8 @@ Per-source contribution to the deduplicated combined corpus. *Unique tools* are 
 
 | Profile | Tools | % | Histogram |
 |---|---:|---:|---|
-| (none) | 5714 | 60.8% | ██████████████████████████████ |
-| (expansion failed) | 16 | 0.2% |  |
+| (none) | 5717 | 60.8% | ██████████████████████████████ |
+| (expansion failed) | 17 | 0.2% |  |
 | 16.01 | 2 | 0.0% |  |
 | 16.04 | 87 | 0.9% |  |
 | 16.07 | 180 | 1.9% | █ |
@@ -64,7 +64,7 @@ Per-source contribution to the deduplicated combined corpus. *Unique tools* are 
 
 | Profile | Tools | % | Histogram |
 |---|---:|---:|---|
-| (none) | 5727 | 60.9% | ██████████████████████████████ |
+| (none) | 5731 | 60.9% | ██████████████████████████████ |
 | 16.01 | 2 | 0.0% |  |
 | 16.04 | 88 | 0.9% |  |
 | 16.07 | 180 | 1.9% | █ |
@@ -111,7 +111,7 @@ Per-source contribution to the deduplicated combined corpus. *Unique tools* are 
 
 | Profile | Tools | % | Histogram |
 |---|---:|---:|---|
-| (none) | 757 | 8.1% | ███ |
+| (none) | 761 | 8.1% | ███ |
 | 19.01 | 9 | 0.1% |  |
 | 21.05 | 1 | 0.0% |  |
 | 21.09 | 2 | 0.0% |  |
@@ -126,8 +126,8 @@ Rows: declared profile *after macro expansion* (oldest first). Columns: newest v
 
 | declared \\ newest | 26.0 | 25.1 | 24.1 | 24.0 | 21.09 | 21.05 | 19.01 | (none) |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| (none) | 4863 | 4 | 126 | 1 | 1 | 0 | 9 | 710 |
-| (expansion failed) | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 16 |
+| (none) | 4863 | 4 | 126 | 1 | 1 | 0 | 9 | 713 |
+| (expansion failed) | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 17 |
 | 16.01 | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 16.04 | 79 | 0 | 1 | 0 | 0 | 0 | 0 | 7 |
 | 16.07 | 180 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
@@ -142,8 +142,8 @@ Rows: declared profile *after macro expansion* (oldest first). Columns: newest v
 | 19.05 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 3 |
 | 19.09 | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 20.01 | 240 | 0 | 3 | 0 | 0 | 0 | 0 | 2 |
-| 20.5 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 |
 | 20.05 | 229 | 0 | 1 | 0 | 0 | 0 | 0 | 2 |
+| 20.5 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 |
 | 20.09 | 78 | 0 | 0 | 0 | 0 | 0 | 0 | 1 |
 | 21.0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 21.01 | 122 | 0 | 1 | 0 | 0 | 0 | 0 | 0 |
@@ -159,8 +159,8 @@ Rows: declared profile *after macro expansion* (oldest first). Columns: newest v
 | 23.2 | 55 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 23.02 | 6 | 0 | 1 | 0 | 0 | 0 | 0 | 0 |
 | 23.05 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| 24.00 | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 24.0 | 120 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 24.00 | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 24.01 | 15 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 24.1 | 68 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 24.2 | 174 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
@@ -172,12 +172,12 @@ Rows: declared profile *after macro expansion* (oldest first). Columns: newest v
 
 | | Tools | % |
 |---|---:|---:|
-| Uses macros | 5142 | 54.7% |
-| Macro-free | 4257 | 45.3% |
+| Uses macros | 5143 | 54.7% |
+| Macro-free | 4260 | 45.3% |
 
 ## Validity-vector contiguity
 
 | | Tools | % |
 |---|---:|---:|
-| Contiguous valid range | 9192 | 97.8% |
+| Contiguous valid range | 9196 | 97.8% |
 | Non-contiguous | 207 | 2.2% |
