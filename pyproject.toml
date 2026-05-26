@@ -20,7 +20,10 @@ galaxy-tool-xml = "galaxy_tool_xml.cli:main"
 [dependency-groups]
 # xsdata[cli] supplies the codegen toolchain (ResourceTransformer and its
 # deps); scripts/regenerate.py and tests/test_codegen.py need it.
-dev = ["xsdata[cli]>=26.2", "pytest>=8", "ruff", "mypy"]
+# mercurial is invoked by scripts/fetch_toolshed.py to clone toolshed repos
+# (the Galaxy ToolShed exposes its content only over the Mercurial wire
+# protocol; the pip-installed package brings its own `hg` binary).
+dev = ["xsdata[cli]>=26.2", "pytest>=8", "ruff", "mypy", "mercurial>=6"]
 
 [build-system]
 # xsdata[cli] is required at build time: the hook runs the model codegen.

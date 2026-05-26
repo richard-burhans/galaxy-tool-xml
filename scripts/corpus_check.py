@@ -19,8 +19,14 @@ permanent regression fixture. Validity contiguity is also measured, but a
 non-contiguous tool is reported as a statistic, not a bug — it is an expected
 real-world property that ``newest_valid_profile`` handles by design.
 
-A corpus statistics artifact (``docs/corpus_stats.md``) is regenerated on
-every full sweep, summarising the distribution of declared profiles, newest
+``--source`` picks which corpus to sweep. ``github`` (default) walks the
+repositories listed in ``corpus_sources.json``, cloning any that are missing.
+``toolshed`` walks ``corpus/galaxy-toolshed/`` which must be populated first
+via ``scripts/fetch_toolshed.py``. Each source writes to its own artifact
+(``docs/corpus_stats.md`` for github, ``docs/toolshed_corpus_stats.md`` for
+toolshed) so the two sweeps remain independent.
+
+The stats artifact summarises the distribution of declared profiles, newest
 validating profiles, the cross-tab between them, macro usage, and validity
 contiguity. The declared-profile distribution and cross-tab use the profile
 **after macro expansion** (what Galaxy actually validates against); the raw
@@ -30,12 +36,12 @@ diagnostic. The stats write is skipped for partial sweeps (``--limit`` or
 
 Usage::
 
-    uv run python scripts/corpus_check.py [--repo NAME] [--limit N] \
-        [--no-stats] [--include-raw-profile]
+    uv run python scripts/corpus_check.py [--source github|toolshed] \
+        [--repo NAME] [--limit N] [--no-stats] [--include-raw-profile]
 
-Repositories are shallow-cloned into the gitignored ``corpus/`` directory and
-reused on later runs. A repository that cannot be cloned is skipped with a
-warning.
+GitHub-source repositories are shallow-cloned into the gitignored ``corpus/``
+directory and reused on later runs. A repository that cannot be cloned is
+skipped with a warning.
 """
 
 from __future__ import annotations
@@ -47,6 +53,7 @@ import subprocess
 import sys
 import traceback
 from collections import Counter
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date
 from functools import cache
@@ -68,8 +75,13 @@ from galaxy_tool_xml.profiles import available_profiles
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 _CORPUS_ROOT = _REPO_ROOT / "corpus"
+_TOOLSHED_ROOT = _CORPUS_ROOT / "galaxy-toolshed"
 _REGRESSIONS = _REPO_ROOT / "tests" / "data" / "regressions"
-_STATS_FILE = _REPO_ROOT / "docs" / "corpus_stats.md"
+_STATS_FILES = {
+    "github": _REPO_ROOT / "docs" / "corpus_stats.md",
+    "toolshed": _REPO_ROOT / "docs" / "toolshed_corpus_stats.md",
+}
+_SOURCES = ("github", "toolshed")
 _PROFILE_NONE = "(none)"
 _PROFILE_EXPANSION_FAILED = "(expansion failed)"
 
@@ -140,6 +152,47 @@ def _corpus_commit(repo_dir: Path) -> str:
         check=False,
     )
     return result.stdout.strip() or "unknown"
+
+
+def _iter_sources(
+    source: str, *, repo_filter: str | None
+) -> Iterable[tuple[str, Path, str]]:
+    """Yield ``(display_name, repo_dir, version_label)`` for each repository.
+
+    ``github`` walks the repositories listed in ``corpus_sources.json``,
+    cloning any that aren't already on disk and labelling each with its
+    git commit SHA. ``toolshed`` walks the per-owner ``<owner>/<name>``
+    layout that ``scripts/fetch_toolshed.py`` produces under
+    ``corpus/galaxy-toolshed/`` and labels each repo as ``"latest"`` (each
+    directory holds only the latest revision's files).
+    """
+    if source == "github":
+        for name, url in _corpus_sources():
+            if repo_filter is not None and name != repo_filter:
+                continue
+            repo_dir = _clone_repo(name, url)
+            if repo_dir is None:
+                continue
+            yield name, repo_dir, _corpus_commit(repo_dir)
+        return
+    if source == "toolshed":
+        if not _TOOLSHED_ROOT.exists():
+            print(
+                f"no toolshed corpus at "
+                f"{_TOOLSHED_ROOT.relative_to(_REPO_ROOT)}; "
+                "run scripts/fetch_toolshed.py first",
+                file=sys.stderr,
+            )
+            return
+        for owner_dir in sorted(_TOOLSHED_ROOT.iterdir()):
+            if not owner_dir.is_dir():
+                continue
+            for repo_dir in sorted(owner_dir.iterdir()):
+                if not repo_dir.is_dir():
+                    continue
+                yield f"{owner_dir.name}/{repo_dir.name}", repo_dir, "latest"
+        return
+    raise ValueError(f"unknown source: {source!r}")
 
 
 # --- invariant checks -------------------------------------------------------
@@ -495,6 +548,8 @@ def _format_binary_table(
 
 def _write_stats(
     *,
+    stats_file: Path,
+    source: str,
     repos: list[tuple[str, str, int]],
     declared_raw_counts: Counter[str],
     declared_expanded_counts: Counter[str],
@@ -505,28 +560,31 @@ def _write_stats(
     include_raw: bool,
     total: int,
 ) -> None:
-    """Write the corpus statistics artifact.
+    """Write the corpus statistics artifact for one source.
 
     The post-expansion declared-profile distribution is the default view;
     the raw (pre-expansion) view is added only when ``include_raw`` is set —
     it shows how often the corpus declares its profile via a macro token
-    like ``@PROFILE@`` and is a diagnostic, not a design input.
+    like ``@PROFILE@`` and is a diagnostic, not a design input. ``source``
+    labels the artifact so a reader can tell at a glance whether they're
+    looking at the github sweep or the toolshed sweep.
     """
-    _STATS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    stats_file.parent.mkdir(parents=True, exist_ok=True)
     lines: list[str] = [
-        "# Corpus statistics",
+        f"# Corpus statistics — {source}",
         "",
-        f"Generated by `scripts/corpus_check.py` on {date.today().isoformat()}. "
-        f"Swept {total} tools across {len(repos)} repositories.",
+        f"Generated by `scripts/corpus_check.py --source {source}` on "
+        f"{date.today().isoformat()}. Swept {total} tools across "
+        f"{len(repos)} repositories.",
         "",
         "This file is regenerated by every full run of `corpus_check.py` "
-        "unless `--no-stats` is given; partial sweeps (`--limit` or `--repo`) "
-        "do not regenerate it. Per-repo commit SHAs make the snapshot "
-        "reproducible.",
+        "for this source unless `--no-stats` is given; partial sweeps "
+        "(`--limit` or `--repo`) do not regenerate it. Per-repo version "
+        "labels make the snapshot reproducible.",
         "",
         "## Repositories",
         "",
-        "| Repository | Commit | Tools |",
+        "| Repository | Version | Tools |",
         "|---|---|---:|",
     ]
     for name, commit, count in sorted(repos):
@@ -570,15 +628,32 @@ def _write_stats(
         )
     )
     lines.append("")
-    _STATS_FILE.write_text("\n".join(lines), encoding="utf-8")
+    stats_file.write_text("\n".join(lines), encoding="utf-8")
 
 
 def main(argv: list[str]) -> int:
-    """Sweep the corpora, report findings, and retain new regression fixtures."""
+    """Sweep one corpus source, report findings, and retain regression fixtures."""
     parser = argparse.ArgumentParser(
-        description="Sweep public Galaxy tool repositories through galaxy-tool-xml."
+        description=(
+            "Sweep a Galaxy tool corpus source (github or toolshed) "
+            "through galaxy-tool-xml."
+        )
     )
-    parser.add_argument("--repo", help="sweep only this repository (by name)")
+    parser.add_argument(
+        "--source",
+        choices=_SOURCES,
+        default="github",
+        help=(
+            "which corpus to sweep: 'github' (default) walks the "
+            "repositories listed in corpus_sources.json, cloning any that "
+            "are missing; 'toolshed' walks corpus/galaxy-toolshed/ which "
+            "must be populated first via scripts/fetch_toolshed.py"
+        ),
+    )
+    parser.add_argument(
+        "--repo",
+        help="sweep only this repository (by name); --source github only",
+    )
     parser.add_argument(
         "--limit",
         type=int,
@@ -588,10 +663,7 @@ def main(argv: list[str]) -> int:
     parser.add_argument(
         "--no-stats",
         action="store_true",
-        help=(
-            "don't regenerate the corpus stats artifact "
-            f"({_STATS_FILE.relative_to(_REPO_ROOT)})"
-        ),
+        help="don't regenerate the corpus stats artifact for the selected source",
     )
     parser.add_argument(
         "--include-raw-profile",
@@ -604,13 +676,21 @@ def main(argv: list[str]) -> int:
     )
     args = parser.parse_args(argv)
 
-    sources = _corpus_sources()
-    repos = [(n, u) for n, u in sources if args.repo is None or n == args.repo]
-    if not repos:
-        known = ", ".join(name for name, _ in sources)
-        print(f"unknown --repo {args.repo!r}; known: {known}", file=sys.stderr)
+    if args.repo is not None and args.source != "github":
+        print(
+            f"--repo is only supported with --source github, not {args.source!r}",
+            file=sys.stderr,
+        )
         return 1
+    if args.source == "github" and args.repo is not None:
+        known_names = {name for name, _ in _corpus_sources()}
+        if args.repo not in known_names:
+            known = ", ".join(sorted(known_names))
+            print(f"unknown --repo {args.repo!r}; known: {known}", file=sys.stderr)
+            return 1
+
     _CORPUS_ROOT.mkdir(parents=True, exist_ok=True)
+    stats_file = _STATS_FILES[args.source]
 
     # The stats artifact is only written for full sweeps, so skip the
     # per-tool stats work (one macro expansion each) in any other case.
@@ -626,11 +706,9 @@ def main(argv: list[str]) -> int:
     crosstab: Counter[tuple[str, str]] = Counter()
     macro_counts: Counter[bool] = Counter()
     contiguity_counts: Counter[bool] = Counter()
-    for name, url in repos:
-        repo_dir = _clone_repo(name, url)
-        if repo_dir is None:
-            continue
-        commit = _corpus_commit(repo_dir)
+    for display_name, repo_dir, version in _iter_sources(
+        args.source, repo_filter=args.repo
+    ):
         repo_tool_count = 0
         for path in sorted(repo_dir.rglob("*.xml")):
             if args.limit and tools >= args.limit:
@@ -658,15 +736,17 @@ def main(argv: list[str]) -> int:
             signatures[signature] += 1
             if signature not in retained_signatures:
                 retained_signatures.add(signature)
-                dest = _retain(path, name)
+                # display_name may carry a '/' for toolshed (owner/name);
+                # sanitize so retained fixture directories stay flat.
+                dest = _retain(path, display_name.replace("/", "__"))
                 relative = path.relative_to(repo_dir)
-                retained.append((dest.name, name, relative, commit, signature))
+                retained.append((dest.name, display_name, relative, version, signature))
                 print(
-                    f"\n{status.upper()}  [{name}] {signature}\n  {relative}\n"
-                    f"  retained -> {dest}"
+                    f"\n{status.upper()}  [{display_name}] {signature}\n  "
+                    f"{relative}\n  retained -> {dest}"
                 )
                 print("  " + detail.strip().replace("\n", "\n  "))
-        repo_tool_counts.append((name, commit, repo_tool_count))
+        repo_tool_counts.append((display_name, version, repo_tool_count))
         if args.limit and tools >= args.limit:
             break
 
@@ -683,7 +763,7 @@ def main(argv: list[str]) -> int:
         print(
             f"\nretained {len(retained)} new regression fixture(s) under {_REGRESSIONS}"
         )
-    stats_path = _STATS_FILE.relative_to(_REPO_ROOT)
+    stats_path = stats_file.relative_to(_REPO_ROOT)
     if args.no_stats:
         pass
     elif args.limit or args.repo:
@@ -693,6 +773,8 @@ def main(argv: list[str]) -> int:
         )
     else:
         _write_stats(
+            stats_file=stats_file,
+            source=args.source,
             repos=repo_tool_counts,
             declared_raw_counts=declared_raw_counts,
             declared_expanded_counts=declared_expanded_counts,
