@@ -22,12 +22,16 @@ real-world property that ``newest_valid_profile`` handles by design.
 A corpus statistics artifact (``docs/corpus_stats.md``) is regenerated on
 every full sweep, summarising the distribution of declared profiles, newest
 validating profiles, the cross-tab between them, macro usage, and validity
-contiguity. The stats write is skipped for partial sweeps (``--limit`` or
+contiguity. The declared-profile distribution and cross-tab use the profile
+**after macro expansion** (what Galaxy actually validates against); the raw
+pre-expansion distribution is available via ``--include-raw-profile`` as a
+diagnostic. The stats write is skipped for partial sweeps (``--limit`` or
 ``--repo``) and can be disabled with ``--no-stats``.
 
 Usage::
 
-    uv run python scripts/corpus_check.py [--repo NAME] [--limit N] [--no-stats]
+    uv run python scripts/corpus_check.py [--repo NAME] [--limit N] \
+        [--no-stats] [--include-raw-profile]
 
 Repositories are shallow-cloned into the gitignored ``corpus/`` directory and
 reused on later runs. A repository that cannot be cloned is skipped with a
@@ -37,6 +41,7 @@ warning.
 from __future__ import annotations
 
 import argparse
+import json
 import shutil
 import subprocess
 import sys
@@ -44,6 +49,7 @@ import traceback
 from collections import Counter
 from dataclasses import dataclass
 from datetime import date
+from functools import cache
 from pathlib import Path
 
 from lxml import etree
@@ -57,7 +63,7 @@ from galaxy_tool_xml.binding import (
 )
 from galaxy_tool_xml.corrections import suggest_corrections
 from galaxy_tool_xml.document import ToolDocument
-from galaxy_tool_xml.macros import has_macros
+from galaxy_tool_xml.macros import expand_from_path, has_macros
 from galaxy_tool_xml.profiles import available_profiles
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -65,49 +71,42 @@ _CORPUS_ROOT = _REPO_ROOT / "corpus"
 _REGRESSIONS = _REPO_ROOT / "tests" / "data" / "regressions"
 _STATS_FILE = _REPO_ROOT / "docs" / "corpus_stats.md"
 _PROFILE_NONE = "(none)"
+_PROFILE_EXPANSION_FAILED = "(expansion failed)"
 
 
 @dataclass
 class ToolStats:
-    """One tool's contribution to the corpus statistics."""
+    """One tool's contribution to the corpus statistics.
 
-    profile: str  # declared profile, or _PROFILE_NONE
+    ``profile_raw`` is the literal ``profile`` attribute on the un-expanded
+    tree — useful for diagnostics (it shows how often the corpus relies on
+    macro tokens like ``@PROFILE@``). ``profile_expanded`` is the attribute
+    after macros are expanded, which is what Galaxy actually validates
+    against; this is the field that informs design decisions about profiles.
+    """
+
+    profile_raw: str  # literal attribute, or _PROFILE_NONE
+    profile_expanded: str  # post-expansion, _PROFILE_NONE, or _PROFILE_EXPANSION_FAILED
     newest_valid: str  # newest validating profile, or _PROFILE_NONE
     has_macros: bool
     contiguous: bool
 
 
-# galaxyproject/tools-iuc, every repository its README links under
-# "Other repositories with Galaxy tools", and further high-quality, actively
-# maintained, planemo-tested community tool repositories.
-_REPOS: tuple[tuple[str, str], ...] = (
-    ("tools-iuc", "https://github.com/galaxyproject/tools-iuc"),
-    ("bgruening-galaxytools", "https://github.com/bgruening/galaxytools"),
-    ("tools-devteam", "https://github.com/galaxyproject/tools-devteam"),
-    ("galaxy_blast", "https://github.com/peterjc/galaxy_blast"),
-    ("pico_galaxy", "https://github.com/peterjc/pico_galaxy"),
-    ("galaxy_mira", "https://github.com/peterjc/galaxy_mira"),
-    ("modENCODE-Galaxy", "https://github.com/modENCODE-DCC/Galaxy"),
-    ("biopython-galaxy_packages", "https://github.com/biopython/galaxy_packages"),
-    ("tools-galaxyp", "https://github.com/galaxyproteomics/tools-galaxyp"),
-    ("tools-colibread", "https://github.com/genouest/tools-colibread"),
-    ("galaxy-csg", "https://github.com/gregvonkuster/galaxy-csg"),
-    ("earlham-galaxytools", "https://github.com/TGAC/earlham-galaxytools"),
-    ("AAFC-MBB-Galaxy", "https://github.com/AAFC-MBB/Galaxy"),
-    ("einonm-galaxy-tools", "https://gitlab.com/einonm/galaxy-tools"),
-    ("phac-nml-galaxy_tools", "https://github.com/phac-nml/galaxy_tools"),
-    ("RECETOX-galaxytools", "https://github.com/RECETOX/galaxytools"),
-    (
-        "tools-metabolomics",
-        "https://github.com/workflow4metabolomics/tools-metabolomics",
-    ),
-    ("Galaxy-M", "https://github.com/Viant-Metabolomics/Galaxy-M"),
-    # Further community tool repositories beyond the tools-iuc README list.
-    ("tools-artbio", "https://github.com/ARTbio/tools-artbio"),
-    ("tools-ecology", "https://github.com/galaxyecology/tools-ecology"),
-    ("fls-galaxy-tools", "https://github.com/fls-bioinformatics-core/galaxy-tools"),
-    ("larch-tools", "https://github.com/MaterialsGalaxy/larch-tools"),
-)
+_CORPUS_SOURCES_FILE = _REPO_ROOT / "corpus_sources.json"
+
+
+@cache
+def _corpus_sources() -> tuple[tuple[str, str], ...]:
+    """Return ``(name, url)`` pairs for every corpus repository.
+
+    Loaded once from ``corpus_sources.json`` at the repo root — the canonical
+    source for anything that walks the corpus, so adding or rerouting a
+    repository is a config edit, not a code change. The order in the file is
+    preserved (sweep order), and ``name`` is also the local clone directory
+    name under ``corpus/``.
+    """
+    raw = json.loads(_CORPUS_SOURCES_FILE.read_text(encoding="utf-8"))
+    return tuple((entry["name"], entry["url"]) for entry in raw["repositories"])
 
 
 def _clone_repo(name: str, url: str) -> Path | None:
@@ -255,7 +254,28 @@ def is_contiguous(vector: list[bool]) -> bool:
     return all(vector[first : last + 1])
 
 
-def _exercise(path: Path) -> tuple[str, str, str, ToolStats | None]:
+def _post_expansion_profile(
+    path: Path, document: ToolDocument, *, has_macros_flag: bool
+) -> str:
+    """Return the tool's ``profile`` attribute after macro expansion.
+
+    For macro-free tools, expansion is a no-op and the raw attribute is
+    returned. For macro-using tools, the tool is expanded from disk and the
+    profile is read from the expanded tree; ``_PROFILE_EXPANSION_FAILED`` is
+    returned when expansion fails (in which case the raw attribute is
+    typically a macro token like ``@PROFILE@`` that conveys no version).
+    """
+    if not has_macros_flag:
+        return document.root.get("profile") or _PROFILE_NONE
+    expanded, _errors = expand_from_path(path)
+    if expanded is None:
+        return _PROFILE_EXPANSION_FAILED
+    return expanded.getroot().get("profile") or _PROFILE_NONE
+
+
+def _exercise(
+    path: Path, *, collect_stats: bool = True
+) -> tuple[str, str, str, ToolStats | None]:
     """Run the public API over one XML file and check every invariant.
 
     Returns ``(status, detail, signature, stats)`` where ``status`` is
@@ -263,7 +283,9 @@ def _exercise(path: Path) -> tuple[str, str, str, ToolStats | None]:
     or an invariant category naming the violated property. ``non-contiguous``
     is reported too — it is an expected real-world property, not a library
     bug. ``stats`` is the tool's contribution to the corpus statistics, or
-    ``None`` for ``skip``/``crash`` cases where it cannot be computed.
+    ``None`` for ``skip``/``crash`` cases, and also when ``collect_stats`` is
+    false (the macro-expansion step needed for ``profile_expanded`` is then
+    skipped).
     """
     try:
         document = parse_tool(path).document
@@ -282,12 +304,19 @@ def _exercise(path: Path) -> tuple[str, str, str, ToolStats | None]:
             _PROFILE_NONE,
         )
         contiguous = is_contiguous(vector)
-        stats = ToolStats(
-            profile=document.root.get("profile") or _PROFILE_NONE,
-            newest_valid=newest_valid,
-            has_macros=has_macros(document.root),
-            contiguous=contiguous,
-        )
+        if collect_stats:
+            has_macros_flag = has_macros(document.root)
+            stats: ToolStats | None = ToolStats(
+                profile_raw=document.root.get("profile") or _PROFILE_NONE,
+                profile_expanded=_post_expansion_profile(
+                    path, document, has_macros_flag=has_macros_flag
+                ),
+                newest_valid=newest_valid,
+                has_macros=has_macros_flag,
+                contiguous=contiguous,
+            )
+        else:
+            stats = None
         for category, detail in (
             _check_immutable(document),
             _check_roundtrip(document),
@@ -370,12 +399,16 @@ def _append_provenance(retained: list[tuple[str, str, Path, str, str]]) -> None:
 
 
 def _profile_sort_key(profile: str) -> tuple[int, ...]:
-    """Sort key: ``_PROFILE_NONE`` first, then numeric profiles oldest→newest.
+    """Sort key: sentinels first, then numeric profiles oldest→newest.
 
-    Anything that isn't ``MAJOR.MINOR`` integers sorts after numeric profiles.
+    ``_PROFILE_NONE`` sorts before ``_PROFILE_EXPANSION_FAILED``; anything
+    that isn't ``MAJOR.MINOR`` integers (or one of the sentinels) sorts after
+    numeric profiles.
     """
     if profile == _PROFILE_NONE:
         return (0,)
+    if profile == _PROFILE_EXPANSION_FAILED:
+        return (0, 1)
     parts = profile.split(".")
     if all(part.isdigit() for part in parts):
         return (1, *(int(part) for part in parts))
@@ -383,9 +416,11 @@ def _profile_sort_key(profile: str) -> tuple[int, ...]:
 
 
 def _profile_sort_key_newest_first(profile: str) -> tuple[int, ...]:
-    """Sort key: numeric profiles newest→oldest, ``_PROFILE_NONE`` last."""
+    """Sort key: numeric profiles newest→oldest, sentinels last."""
     if profile == _PROFILE_NONE:
         return (2,)
+    if profile == _PROFILE_EXPANSION_FAILED:
+        return (2, 1)
     parts = profile.split(".")
     if all(part.isdigit() for part in parts):
         return (0, *(-int(part) for part in parts))
@@ -425,11 +460,11 @@ def _format_crosstab(crosstab: Counter[tuple[str, str]]) -> list[str]:
     declared = sorted({d for d, _ in crosstab}, key=_profile_sort_key)
     newest = sorted({n for _, n in crosstab}, key=_profile_sort_key_newest_first)
     lines = [
-        "## Declared × newest-valid (cross-tab)",
+        "## Declared (post-expansion) × newest-valid (cross-tab)",
         "",
-        "Rows: declared profile (oldest first). Columns: newest validating "
-        "profile (newest first). Read across a row to see where tools at a "
-        "given declared profile actually end up.",
+        "Rows: declared profile *after macro expansion* (oldest first). "
+        "Columns: newest validating profile (newest first). Read across a "
+        "row to see where tools at a given declared profile actually end up.",
         "",
     ]
     lines.append("| declared \\\\ newest | " + " | ".join(newest) + " |")
@@ -461,14 +496,22 @@ def _format_binary_table(
 def _write_stats(
     *,
     repos: list[tuple[str, str, int]],
-    declared_counts: Counter[str],
+    declared_raw_counts: Counter[str],
+    declared_expanded_counts: Counter[str],
     newest_valid_counts: Counter[str],
     crosstab: Counter[tuple[str, str]],
     macro_counts: Counter[bool],
     contiguity_counts: Counter[bool],
+    include_raw: bool,
     total: int,
 ) -> None:
-    """Write the corpus statistics artifact."""
+    """Write the corpus statistics artifact.
+
+    The post-expansion declared-profile distribution is the default view;
+    the raw (pre-expansion) view is added only when ``include_raw`` is set —
+    it shows how often the corpus declares its profile via a macro token
+    like ``@PROFILE@`` and is a diagnostic, not a design input.
+    """
     _STATS_FILE.parent.mkdir(parents=True, exist_ok=True)
     lines: list[str] = [
         "# Corpus statistics",
@@ -491,10 +534,21 @@ def _write_stats(
     lines.append("")
     lines.extend(
         _format_distribution(
-            "Declared profile distribution", declared_counts, total=total
+            "Declared profile distribution (post macro expansion)",
+            declared_expanded_counts,
+            total=total,
         )
     )
     lines.append("")
+    if include_raw:
+        lines.extend(
+            _format_distribution(
+                "Declared profile distribution (raw, pre-expansion)",
+                declared_raw_counts,
+                total=total,
+            )
+        )
+        lines.append("")
     lines.extend(
         _format_distribution(
             "Newest valid profile distribution", newest_valid_counts, total=total
@@ -539,21 +593,35 @@ def main(argv: list[str]) -> int:
             f"({_STATS_FILE.relative_to(_REPO_ROOT)})"
         ),
     )
+    parser.add_argument(
+        "--include-raw-profile",
+        action="store_true",
+        help=(
+            "also include a raw (pre-macro-expansion) profile distribution "
+            "in the stats artifact, useful for diagnosing how often the "
+            "corpus declares its profile via a macro token like @PROFILE@"
+        ),
+    )
     args = parser.parse_args(argv)
 
-    repos = [(n, u) for n, u in _REPOS if args.repo is None or n == args.repo]
+    sources = _corpus_sources()
+    repos = [(n, u) for n, u in sources if args.repo is None or n == args.repo]
     if not repos:
-        known = ", ".join(name for name, _ in _REPOS)
+        known = ", ".join(name for name, _ in sources)
         print(f"unknown --repo {args.repo!r}; known: {known}", file=sys.stderr)
         return 1
     _CORPUS_ROOT.mkdir(parents=True, exist_ok=True)
 
+    # The stats artifact is only written for full sweeps, so skip the
+    # per-tool stats work (one macro expansion each) in any other case.
+    collect_stats = not (args.no_stats or args.limit or args.repo)
     tools = 0
     signatures: Counter[str] = Counter()
     retained_signatures = _known_signatures()
     retained: list[tuple[str, str, Path, str, str]] = []
     repo_tool_counts: list[tuple[str, str, int]] = []
-    declared_counts: Counter[str] = Counter()
+    declared_raw_counts: Counter[str] = Counter()
+    declared_expanded_counts: Counter[str] = Counter()
     newest_valid_counts: Counter[str] = Counter()
     crosstab: Counter[tuple[str, str]] = Counter()
     macro_counts: Counter[bool] = Counter()
@@ -569,15 +637,18 @@ def main(argv: list[str]) -> int:
                 break
             if not path.is_file():
                 continue  # broken symlink or non-regular file — not a tool
-            status, detail, signature, stats = _exercise(path)
+            status, detail, signature, stats = _exercise(
+                path, collect_stats=collect_stats
+            )
             if status == "skip":
                 continue
             tools += 1
             repo_tool_count += 1
             if stats is not None:
-                declared_counts[stats.profile] += 1
+                declared_raw_counts[stats.profile_raw] += 1
+                declared_expanded_counts[stats.profile_expanded] += 1
                 newest_valid_counts[stats.newest_valid] += 1
-                crosstab[(stats.profile, stats.newest_valid)] += 1
+                crosstab[(stats.profile_expanded, stats.newest_valid)] += 1
                 macro_counts[stats.has_macros] += 1
                 contiguity_counts[stats.contiguous] += 1
             if tools % 500 == 0:
@@ -623,11 +694,13 @@ def main(argv: list[str]) -> int:
     else:
         _write_stats(
             repos=repo_tool_counts,
-            declared_counts=declared_counts,
+            declared_raw_counts=declared_raw_counts,
+            declared_expanded_counts=declared_expanded_counts,
             newest_valid_counts=newest_valid_counts,
             crosstab=crosstab,
             macro_counts=macro_counts,
             contiguity_counts=contiguity_counts,
+            include_raw=args.include_raw_profile,
             total=tools,
         )
         print(f"\ncorpus stats -> {stats_path}")
