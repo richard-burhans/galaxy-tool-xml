@@ -175,6 +175,9 @@ def _stage_import(
     destination = tmp_dir / relative_path
     destination.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy(source, destination)
+    # recover=True handles most malformed XML, but pathological inputs (e.g.
+    # an empty file with nothing to recover) still raise; treat as un-stageable
+    # — the missing root just suppresses transitive <import> staging.
     try:
         staged_root = etree.parse(
             str(destination), etree.XMLParser(recover=True)

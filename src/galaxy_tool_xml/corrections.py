@@ -21,6 +21,8 @@ from dataclasses import dataclass
 from difflib import get_close_matches
 from functools import cache
 
+from lxml import etree
+
 from galaxy_tool_xml.binding import Source, parse_tool
 from galaxy_tool_xml.document import ToolDocument
 from galaxy_tool_xml.models.registry import tool_class
@@ -63,9 +65,14 @@ class Correction:
 
 @dataclass(frozen=True)
 class _Vocabulary:
-    """The attribute and child-element vocabulary of one model class."""
+    """The attribute and child-element vocabulary of one model class.
 
-    attributes: dict[str, type[enum.Enum] | None]
+    Each attribute maps to its tuple of legal enumerated values (precomputed
+    from the enum at vocabulary-build time), or ``None`` for non-enumerated
+    attributes.
+    """
+
+    attributes: dict[str, tuple[str, ...] | None]
     elements: dict[str, type | None]
     has_wildcard: bool
 
@@ -100,7 +107,7 @@ def _dataclass_or_none(resolved: object) -> type | None:
 def _vocabulary(model_class: type) -> _Vocabulary:
     """Introspect a model class into its schema vocabulary (cached per class)."""
     hints = typing.get_type_hints(model_class)
-    attributes: dict[str, type[enum.Enum] | None] = {}
+    attributes: dict[str, tuple[str, ...] | None] = {}
     elements: dict[str, type | None] = {}
     has_wildcard = False
     for model_field in dataclasses.fields(model_class):
@@ -108,7 +115,12 @@ def _vocabulary(model_class: type) -> _Vocabulary:
         xml_name = model_field.metadata.get("name") or model_field.name
         resolved = _unwrap(hints.get(model_field.name))
         if kind == "Attribute":
-            attributes[xml_name] = _enum_type(resolved)
+            enum_class = _enum_type(resolved)
+            attributes[xml_name] = (
+                tuple(str(member.value) for member in enum_class)
+                if enum_class is not None
+                else None
+            )
         elif kind == "Element":
             elements[xml_name] = _dataclass_or_none(resolved)
         elif kind == "Wildcard":
@@ -119,7 +131,7 @@ def _vocabulary(model_class: type) -> _Vocabulary:
 
 
 def _check_attributes(
-    element: typing.Any, model_class: type, corrections: list[Correction]
+    element: etree._Element, model_class: type, corrections: list[Correction]
 ) -> None:
     """Flag misspelled attribute names and enumerated attribute values."""
     vocabulary = _vocabulary(model_class)
@@ -138,10 +150,9 @@ def _check_attributes(
                     )
                 )
             continue
-        enum_class = vocabulary.attributes[name]
-        if enum_class is None:
+        legal = vocabulary.attributes[name]
+        if legal is None:
             continue
-        legal = [str(member.value) for member in enum_class]
         if value not in legal:
             match = get_close_matches(value, legal, n=1, cutoff=_CUTOFF)
             if match:
@@ -158,7 +169,7 @@ def _check_attributes(
 
 
 def _walk(
-    element: typing.Any, model_class: type, corrections: list[Correction]
+    element: etree._Element, model_class: type, corrections: list[Correction]
 ) -> None:
     """Descend the tree and the model classes together, collecting corrections."""
     _check_attributes(element, model_class, corrections)

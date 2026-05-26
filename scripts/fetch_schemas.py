@@ -29,26 +29,26 @@ from pathlib import Path
 
 logger = logging.getLogger("fetch_schemas")
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
-SCHEMA_DIR = REPO_ROOT / "src" / "galaxy_tool_xml" / "schema"
-MANIFEST_PATH = SCHEMA_DIR / "manifest.json"
-PROVENANCE_PATH = SCHEMA_DIR / "PROVENANCE.md"
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+_SCHEMA_DIR = _REPO_ROOT / "src" / "galaxy_tool_xml" / "schema"
+_MANIFEST_PATH = _SCHEMA_DIR / "manifest.json"
+_PROVENANCE_PATH = _SCHEMA_DIR / "PROVENANCE.md"
 
-MATCHING_REFS_URL = (
+_MATCHING_REFS_URL = (
     "https://api.github.com/repos/galaxyproject/galaxy"
     "/git/matching-refs/heads/release_?per_page=100"
 )
-RAW_URL_TEMPLATE = (
+_RAW_URL_TEMPLATE = (
     "https://raw.githubusercontent.com/galaxyproject/galaxy/{branch}/{path}"
 )
 # Galaxy moved the XSD around release 20.09; try the modern path first.
-XSD_PATHS = (
+_XSD_PATHS = (
     "lib/galaxy/tool_util/xsd/galaxy.xsd",
     "lib/galaxy/tools/xsd/galaxy.xsd",
 )
-VERSION_RE = re.compile(r"^\d+\.\d+$")
-USER_AGENT = "galaxy-tool-xml-fetch-schemas"
-HTTP_TIMEOUT = 30
+_VERSION_RE = re.compile(r"^\d+\.\d+$")
+_USER_AGENT = "galaxy-tool-xml-fetch-schemas"
+_HTTP_TIMEOUT = 30
 
 
 def version_sort_key(version: str) -> tuple[int, int]:
@@ -78,12 +78,12 @@ def _next_link(link_header: str | None) -> str | None:
 def _api_get(url: str) -> tuple[bytes, str | None]:
     """GET a GitHub API URL; return ``(body, next_link)``. Raises on failure."""
     request = urllib.request.Request(url)  # noqa: S310 — fixed https GitHub host
-    request.add_header("User-Agent", USER_AGENT)
+    request.add_header("User-Agent", _USER_AGENT)
     request.add_header("Accept", "application/vnd.github+json")
     token = os.environ.get("GITHUB_TOKEN")
     if token:
         request.add_header("Authorization", f"Bearer {token}")
-    with urllib.request.urlopen(request, timeout=HTTP_TIMEOUT) as response:  # noqa: S310
+    with urllib.request.urlopen(request, timeout=_HTTP_TIMEOUT) as response:  # noqa: S310
         return response.read(), response.headers.get("Link")
 
 
@@ -94,7 +94,7 @@ def list_release_branches() -> list[dict[str, str]]:
     if the GitHub API cannot be reached or returns an unusable response.
     """
     branches: list[dict[str, str]] = []
-    url: str | None = MATCHING_REFS_URL
+    url: str | None = _MATCHING_REFS_URL
     while url:
         body, next_link = _api_get(url)
         for ref in json.loads(body):
@@ -113,9 +113,9 @@ def list_release_branches() -> list[dict[str, str]]:
 def _try_download(url: str) -> bytes | None:
     """Download ``url``; return its bytes, or ``None`` on 404 / network error."""
     request = urllib.request.Request(url)  # noqa: S310 — fixed https GitHub host
-    request.add_header("User-Agent", USER_AGENT)
+    request.add_header("User-Agent", _USER_AGENT)
     try:
-        with urllib.request.urlopen(request, timeout=HTTP_TIMEOUT) as response:  # noqa: S310
+        with urllib.request.urlopen(request, timeout=_HTTP_TIMEOUT) as response:  # noqa: S310
             return response.read()
     except urllib.error.HTTPError as error:
         if error.code != 404:
@@ -128,8 +128,8 @@ def _try_download(url: str) -> bytes | None:
 
 def download_xsd(branch: str) -> tuple[str, bytes] | None:
     """Fetch ``galaxy.xsd`` for a release branch; return ``(path_in_repo, bytes)``."""
-    for path in XSD_PATHS:
-        content = _try_download(RAW_URL_TEMPLATE.format(branch=branch, path=path))
+    for path in _XSD_PATHS:
+        content = _try_download(_RAW_URL_TEMPLATE.format(branch=branch, path=path))
         if content is not None:
             return path, content
     return None
@@ -137,8 +137,8 @@ def download_xsd(branch: str) -> tuple[str, bytes] | None:
 
 def load_manifest() -> dict[str, object]:
     """Load ``manifest.json`` if it exists, else return an empty manifest."""
-    if MANIFEST_PATH.exists():
-        return json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    if _MANIFEST_PATH.exists():
+        return json.loads(_MANIFEST_PATH.read_text(encoding="utf-8"))
     return {"latest": None, "schemas": {}}
 
 
@@ -146,7 +146,7 @@ def write_manifest(schemas: dict[str, dict[str, str]]) -> None:
     """Write ``manifest.json`` deterministically (sorted keys)."""
     latest = max(schemas, key=version_sort_key) if schemas else None
     manifest = {"latest": latest, "schemas": schemas}
-    MANIFEST_PATH.write_text(
+    _MANIFEST_PATH.write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
 
@@ -181,7 +181,7 @@ def write_provenance(schemas: dict[str, dict[str, str]]) -> None:
         "| --- | --- | --- | --- | --- | --- |",
     ]
     for entry in rows:
-        source_url = RAW_URL_TEMPLATE.format(
+        source_url = _RAW_URL_TEMPLATE.format(
             branch=entry["release_branch"], path=entry["path_in_repo"]
         )
         lines.append(
@@ -198,7 +198,7 @@ def write_provenance(schemas: dict[str, dict[str, str]]) -> None:
         "unmodified as a convenience for offline, profile-aware validation.",
         "",
     ]
-    PROVENANCE_PATH.write_text("\n".join(lines), encoding="utf-8")
+    _PROVENANCE_PATH.write_text("\n".join(lines), encoding="utf-8")
 
 
 def main() -> int:
@@ -212,7 +212,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    SCHEMA_DIR.mkdir(parents=True, exist_ok=True)
+    _SCHEMA_DIR.mkdir(parents=True, exist_ok=True)
     existing = load_manifest()
     existing_schemas: dict[str, dict[str, str]] = dict(existing.get("schemas", {}))  # type: ignore[arg-type]
 
@@ -224,7 +224,7 @@ def main() -> int:
         branches = None
 
     if branches is None:
-        vendored = sorted(SCHEMA_DIR.glob("galaxy-*.xsd"))
+        vendored = sorted(_SCHEMA_DIR.glob("galaxy-*.xsd"))
         if not vendored:
             logger.error(
                 "GitHub API unreachable and no XSDs are vendored yet — cannot proceed."
@@ -238,7 +238,7 @@ def main() -> int:
         return 0
 
     candidates = sorted(
-        (b for b in branches if VERSION_RE.match(b["version"])),
+        (b for b in branches if _VERSION_RE.match(b["version"])),
         key=lambda b: version_sort_key(b["version"]),
     )
     today = date.today().isoformat()
@@ -254,7 +254,7 @@ def main() -> int:
             continue
         path_in_repo, content = result
         file_name = f"galaxy-{version}.xsd"
-        (SCHEMA_DIR / file_name).write_bytes(content)
+        (_SCHEMA_DIR / file_name).write_bytes(content)
         schemas[version] = {
             "version": version,
             "release_branch": branch_info["branch"],
