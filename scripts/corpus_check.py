@@ -161,45 +161,66 @@ def _corpus_commit(repo_dir: Path) -> str:
     return result.stdout.strip() or "unknown"
 
 
-def _iter_sources(
-    source: str, *, repo_filter: str | None
-) -> Iterable[tuple[str, Path, str]]:
-    """Yield ``(display_name, repo_dir, version_label)`` for each repository.
+def _iter_github_sources(
+    *,
+    repo_filter: str | None,
+) -> Iterable[tuple[str, str, Path, str]]:
+    """Yield ``("github", display_name, repo_dir, commit_sha)`` per github repo.
 
-    ``github`` walks the repositories listed in ``corpus_sources.json``,
-    cloning any that aren't already on disk and labelling each with its
-    git commit SHA. ``toolshed`` walks the per-owner ``<owner>/<name>``
-    layout that ``scripts/fetch_toolshed.py`` produces under
-    ``corpus/galaxy-toolshed/`` and labels each repo as ``"latest"`` (each
-    directory holds only the latest revision's files).
+    Walks the entries in ``corpus_sources.json``, cloning any that aren't
+    already on disk and labelling each with its git commit SHA.
     """
-    if source == "github":
-        for name, url in _corpus_sources():
-            if repo_filter is not None and name != repo_filter:
-                continue
-            repo_dir = _clone_repo(name, url)
-            if repo_dir is None:
-                continue
-            yield name, repo_dir, _corpus_commit(repo_dir)
+    for name, url in _corpus_sources():
+        if repo_filter is not None and name != repo_filter:
+            continue
+        repo_dir = _clone_repo(name, url)
+        if repo_dir is None:
+            continue
+        yield "github", name, repo_dir, _corpus_commit(repo_dir)
+
+
+def _iter_toolshed_sources() -> Iterable[tuple[str, str, Path, str]]:
+    """Yield ``("toolshed", "<owner>/<name>", repo_dir, "latest")`` per repo.
+
+    Walks the per-owner ``<owner>/<name>`` layout that
+    ``scripts/fetch_toolshed.py`` produces under ``corpus/galaxy-toolshed/``;
+    each directory holds only the latest revision's files. Empty (and prints
+    a hint) when the toolshed corpus has not been populated yet.
+    """
+    if not _TOOLSHED_ROOT.exists():
+        print(
+            f"no toolshed corpus at {_TOOLSHED_ROOT.relative_to(_REPO_ROOT)}; "
+            "run scripts/fetch_toolshed.py first",
+            file=sys.stderr,
+        )
         return
-    if source == "toolshed":
-        if not _TOOLSHED_ROOT.exists():
-            print(
-                f"no toolshed corpus at "
-                f"{_TOOLSHED_ROOT.relative_to(_REPO_ROOT)}; "
-                "run scripts/fetch_toolshed.py first",
-                file=sys.stderr,
-            )
-            return
-        for owner_dir in sorted(_TOOLSHED_ROOT.iterdir()):
-            if not owner_dir.is_dir():
+    for owner_dir in sorted(_TOOLSHED_ROOT.iterdir()):
+        if not owner_dir.is_dir():
+            continue
+        for repo_dir in sorted(owner_dir.iterdir()):
+            if not repo_dir.is_dir():
                 continue
-            for repo_dir in sorted(owner_dir.iterdir()):
-                if not repo_dir.is_dir():
-                    continue
-                yield f"{owner_dir.name}/{repo_dir.name}", repo_dir, "latest"
-        return
-    raise ValueError(f"unknown source: {source!r}")
+            yield "toolshed", f"{owner_dir.name}/{repo_dir.name}", repo_dir, "latest"
+
+
+def _iter_sources(
+    sources: tuple[str, ...],
+    *,
+    repo_filter: str | None,
+) -> Iterable[tuple[str, str, Path, str]]:
+    """Yield ``(source_label, display_name, repo_dir, version)`` for each repo.
+
+    Dispatches per source name (``github`` or ``toolshed``) and chains the
+    streams, so the caller iterates one flat sequence regardless of how many
+    sources are walked. Combined-mode callers pass both source names.
+    """
+    for source in sources:
+        if source == "github":
+            yield from _iter_github_sources(repo_filter=repo_filter)
+        elif source == "toolshed":
+            yield from _iter_toolshed_sources()
+        else:
+            raise ValueError(f"unknown source: {source!r}")
 
 
 # --- invariant checks -------------------------------------------------------
@@ -338,6 +359,27 @@ def _post_expansion_profile(
     if expanded is None:
         return _PROFILE_EXPANSION_FAILED
     return expanded.getroot().get("profile") or _PROFILE_NONE
+
+
+def _is_duplicate(
+    path: Path,
+    source_label: str,
+    *,
+    seen_hashes: set[str],
+    duplicate_counts: Counter[str],
+) -> bool:
+    """Hash ``path``'s bytes; return ``True`` (and count) if already seen.
+
+    Combined-mode dedup gate. Returns ``False`` for first occurrences
+    (recording the hash so later occurrences dedupe) and ``True`` for
+    repeats (incrementing the per-source duplicate counter).
+    """
+    content_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+    if content_hash in seen_hashes:
+        duplicate_counts[source_label] += 1
+        return True
+    seen_hashes.add(content_hash)
+    return False
 
 
 def _exercise(
@@ -787,63 +829,58 @@ def main(argv: list[str]) -> int:
     seen_hashes: set[str] = set()
     source_unique_counts: Counter[str] = Counter()
     source_duplicate_counts: Counter[str] = Counter()
-    limit_reached = False
-    for source_label in sources_to_walk:
-        if limit_reached:
-            break
-        for display_name, repo_dir, version in _iter_sources(
-            source_label, repo_filter=args.repo if not combined else None
-        ):
-            repo_tool_count = 0
-            for path in sorted(repo_dir.rglob("*.xml")):
-                if args.limit and tools >= args.limit:
-                    limit_reached = True
-                    break
-                if not path.is_file():
-                    continue  # broken symlink or non-regular file — not a tool
-                if combined:
-                    content_hash = hashlib.sha256(path.read_bytes()).hexdigest()
-                    if content_hash in seen_hashes:
-                        source_duplicate_counts[source_label] += 1
-                        continue
-                    seen_hashes.add(content_hash)
-                status, detail, signature, stats = _exercise(
-                    path, collect_stats=collect_stats
-                )
-                if status == "skip":
-                    continue
-                tools += 1
-                repo_tool_count += 1
-                source_unique_counts[source_label] += 1
-                if stats is not None:
-                    declared_raw_counts[stats.profile_raw] += 1
-                    declared_expanded_counts[stats.profile_expanded] += 1
-                    newest_valid_counts[stats.newest_valid] += 1
-                    crosstab[(stats.profile_expanded, stats.newest_valid)] += 1
-                    macro_counts[stats.has_macros] += 1
-                    contiguity_counts[stats.contiguous] += 1
-                if tools % 500 == 0:
-                    print(f"  ... {tools} tools", file=sys.stderr)
-                if status == "ok":
-                    continue
-                signatures[signature] += 1
-                if signature not in retained_signatures:
-                    retained_signatures.add(signature)
-                    # display_name may carry a '/' for toolshed (owner/name);
-                    # sanitize so retained fixture directories stay flat.
-                    dest = _retain(path, display_name.replace("/", "__"))
-                    relative = path.relative_to(repo_dir)
-                    retained.append(
-                        (dest.name, display_name, relative, version, signature)
-                    )
-                    print(
-                        f"\n{status.upper()}  [{display_name}] {signature}\n  "
-                        f"{relative}\n  retained -> {dest}"
-                    )
-                    print("  " + detail.strip().replace("\n", "\n  "))
-            repo_tool_counts.append((display_name, version, repo_tool_count))
-            if limit_reached:
+    for source_label, display_name, repo_dir, version in _iter_sources(
+        sources_to_walk, repo_filter=args.repo if not combined else None
+    ):
+        repo_tool_count = 0
+        for path in sorted(repo_dir.rglob("*.xml")):
+            if args.limit and tools >= args.limit:
                 break
+            if not path.is_file():
+                continue  # broken symlink or non-regular file — not a tool
+            if combined and _is_duplicate(
+                path,
+                source_label,
+                seen_hashes=seen_hashes,
+                duplicate_counts=source_duplicate_counts,
+            ):
+                continue
+            status, detail, signature, stats = _exercise(
+                path, collect_stats=collect_stats
+            )
+            if status == "skip":
+                continue
+            tools += 1
+            repo_tool_count += 1
+            source_unique_counts[source_label] += 1
+            if stats is not None:
+                declared_raw_counts[stats.profile_raw] += 1
+                declared_expanded_counts[stats.profile_expanded] += 1
+                newest_valid_counts[stats.newest_valid] += 1
+                crosstab[(stats.profile_expanded, stats.newest_valid)] += 1
+                macro_counts[stats.has_macros] += 1
+                contiguity_counts[stats.contiguous] += 1
+            if tools % 500 == 0:
+                print(f"  ... {tools} tools", file=sys.stderr)
+            if status == "ok":
+                continue
+            signatures[signature] += 1
+            if signature in retained_signatures:
+                continue
+            retained_signatures.add(signature)
+            # display_name may carry a '/' for toolshed (owner/name);
+            # sanitize so retained fixture directories stay flat.
+            dest = _retain(path, display_name.replace("/", "__"))
+            relative = path.relative_to(repo_dir)
+            retained.append((dest.name, display_name, relative, version, signature))
+            print(
+                f"\n{status.upper()}  [{display_name}] {signature}\n  "
+                f"{relative}\n  retained -> {dest}"
+            )
+            print("  " + detail.strip().replace("\n", "\n  "))
+        repo_tool_counts.append((display_name, version, repo_tool_count))
+        if args.limit and tools >= args.limit:
+            break
 
     print(f"\n--- swept {tools} tools ---")
     for signature, count in signatures.most_common():
