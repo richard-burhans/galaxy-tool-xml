@@ -18,7 +18,9 @@ wheels/
 src/galaxy_tool_xml/models/v*/
 src/galaxy_tool_xml/models/any_tool.py
 
-# tools-iuc corpus cache (scripts/corpus_check.py)
+# Dev-only corpus checkouts — public Galaxy tool repositories (and any
+# future toolshed snapshots) cloned by scripts/corpus_check.py for deep
+# testing and design decisions; never committed.
 corpus/
 
 # Local, per-developer Claude Code settings
