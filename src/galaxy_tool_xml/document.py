@@ -59,7 +59,8 @@ def _patch_xsdata_primitive_node_leniency() -> None:
     tree (the source of truth) still carries the markup verbatim; the
     typed model just lacks it.
 
-    Idempotent; ``_xml_parser`` is ``@cache``-d so this runs at most once.
+    Called at most once because ``_xml_parser`` is ``@cache``-d; repeated
+    calls would re-bind ``PrimitiveNode.child`` with an equivalent closure.
     """
     from xsdata.formats.dataclass.parsers.mixins import XmlNode
     from xsdata.formats.dataclass.parsers.nodes.primitive import PrimitiveNode
@@ -139,6 +140,13 @@ class ToolDocument:
         is a read-only view, re-derived on every call from the live tree;
         callers may cache it. The lxml tree, not this model, is the mutable
         representation.
+
+        Lenient by design: unknown attributes and elements are ignored,
+        omitted required fields default to ``None``, and HTML-like markup
+        embedded inside schema-primitive fields (e.g., ``<i>`` inside a
+        text-only field) is silently skipped in the typed view — the lxml
+        tree still carries it verbatim. The method does not raise on any
+        real-world tool XML.
         """
         resolved = resolve_profile(version if version is not None else self.profile)
         # The exact runtime class is version-specific; cast to the AnyTool union.

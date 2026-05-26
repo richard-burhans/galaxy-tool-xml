@@ -184,16 +184,11 @@ def _iter_toolshed_sources() -> Iterable[tuple[str, str, Path, str]]:
 
     Walks the per-owner ``<owner>/<name>`` layout that
     ``scripts/fetch_toolshed.py`` produces under ``corpus/galaxy-toolshed/``;
-    each directory holds only the latest revision's files. Empty (and prints
-    a hint) when the toolshed corpus has not been populated yet.
+    each directory holds only the latest revision's files. Callers must
+    LBYL-check ``_TOOLSHED_ROOT.exists()`` before iterating — ``iterdir``
+    would otherwise raise ``FileNotFoundError`` and "missing corpus" would
+    look the same as "empty corpus".
     """
-    if not _TOOLSHED_ROOT.exists():
-        print(
-            f"no toolshed corpus at {_TOOLSHED_ROOT.relative_to(_REPO_ROOT)}; "
-            "run scripts/fetch_toolshed.py first",
-            file=sys.stderr,
-        )
-        return
     for owner_dir in sorted(_TOOLSHED_ROOT.iterdir()):
         if not owner_dir.is_dir():
             continue
@@ -355,6 +350,9 @@ def _post_expansion_profile(
     """
     if not has_macros_flag:
         return document.root.get("profile") or _PROFILE_NONE
+    # _errors discarded here on purpose: this function's sole job is profile
+    # detection, and any macro-expansion errors surface separately via
+    # _check_macro_handling and validate_tool's own macro_errors.
     expanded, _errors = expand_from_path(path)
     if expanded is None:
         return _PROFILE_EXPANSION_FAILED
@@ -439,7 +437,7 @@ def _exercise(
         if not contiguous:
             run = "".join("1" if ok else "0" for ok in vector)
             return "non-contiguous", f"validity vector: {run}", "non-contiguous", stats
-    except Exception as exc:  # diagnostic sweep: every crash is a finding
+    except Exception as exc:  # noqa: BLE001 — diagnostic sweep: every crash is a finding
         return "crash", traceback.format_exc(), _signature(exc), None
     return "ok", "", "", stats
 
@@ -812,6 +810,13 @@ def main(argv: list[str]) -> int:
     collect_stats = not (args.no_stats or args.limit or args.repo)
     combined = args.source == "combined"
     sources_to_walk = _COMBINED_SUB_SOURCES if combined else (args.source,)
+    if "toolshed" in sources_to_walk and not _TOOLSHED_ROOT.exists():
+        print(
+            f"no toolshed corpus at {_TOOLSHED_ROOT.relative_to(_REPO_ROOT)}; "
+            "run scripts/fetch_toolshed.py first",
+            file=sys.stderr,
+        )
+        return 1
     tools = 0
     signatures: Counter[str] = Counter()
     retained_signatures = _known_signatures()

@@ -48,8 +48,13 @@ _PAGE_SIZE = 500
 _PROGRESS_EVERY = 100
 
 
-def _api_get(url: str) -> dict[str, object]:
-    """GET a ToolShed API URL, returning the parsed JSON envelope."""
+def _api_get(url: str) -> object:
+    """GET a ToolShed API URL and return the parsed JSON body.
+
+    Returned as ``object`` rather than ``dict`` because ``json.loads`` can
+    yield any JSON value; the caller is responsible for an ``isinstance``
+    LBYL check before structural access.
+    """
     request = urllib.request.Request(url)  # noqa: S310 — fixed toolshed host
     request.add_header("User-Agent", _USER_AGENT)
     request.add_header("Accept", "application/json")
@@ -73,6 +78,8 @@ def list_repositories(*, skip_owners: frozenset[str]) -> list[tuple[str, str]]:
             f"?deleted=false&deprecated=false"
             f"&page={page}&page_size={_PAGE_SIZE}"
         )
+        if not isinstance(envelope, dict):
+            break  # malformed response; nothing structured to unpack
         hits = envelope.get("hits") or []
         if not isinstance(hits, list) or not hits:
             break
