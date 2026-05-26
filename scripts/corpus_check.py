@@ -19,9 +19,15 @@ permanent regression fixture. Validity contiguity is also measured, but a
 non-contiguous tool is reported as a statistic, not a bug — it is an expected
 real-world property that ``newest_valid_profile`` handles by design.
 
+A corpus statistics artifact (``docs/corpus_stats.md``) is regenerated on
+every full sweep, summarising the distribution of declared profiles, newest
+validating profiles, the cross-tab between them, macro usage, and validity
+contiguity. The stats write is skipped for partial sweeps (``--limit`` or
+``--repo``) and can be disabled with ``--no-stats``.
+
 Usage::
 
-    uv run python scripts/corpus_check.py [--repo NAME] [--limit N]
+    uv run python scripts/corpus_check.py [--repo NAME] [--limit N] [--no-stats]
 
 Repositories are shallow-cloned into the gitignored ``corpus/`` directory and
 reused on later runs. A repository that cannot be cloned is skipped with a
@@ -36,6 +42,8 @@ import subprocess
 import sys
 import traceback
 from collections import Counter
+from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 
 from lxml import etree
@@ -55,6 +63,19 @@ from galaxy_tool_xml.profiles import available_profiles
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 _CORPUS_ROOT = _REPO_ROOT / "corpus"
 _REGRESSIONS = _REPO_ROOT / "tests" / "data" / "regressions"
+_STATS_FILE = _REPO_ROOT / "docs" / "corpus_stats.md"
+_PROFILE_NONE = "(none)"
+
+
+@dataclass
+class ToolStats:
+    """One tool's contribution to the corpus statistics."""
+
+    profile: str  # declared profile, or _PROFILE_NONE
+    newest_valid: str  # newest validating profile, or _PROFILE_NONE
+    has_macros: bool
+    contiguous: bool
+
 
 # galaxyproject/tools-iuc, every repository its README links under
 # "Other repositories with Galaxy tools", and further high-quality, actively
@@ -234,19 +255,39 @@ def is_contiguous(vector: list[bool]) -> bool:
     return all(vector[first : last + 1])
 
 
-def _exercise(path: Path) -> tuple[str, str, str]:
+def _exercise(path: Path) -> tuple[str, str, str, ToolStats | None]:
     """Run the public API over one XML file and check every invariant.
 
-    Returns ``(status, detail, signature)`` where ``status`` is ``skip`` (not a
-    ``<tool>`` file), ``ok``, ``crash`` (the library raised), or an invariant
-    category naming the violated property. ``non-contiguous`` is reported too —
-    it is an expected real-world property, not a library bug.
+    Returns ``(status, detail, signature, stats)`` where ``status`` is
+    ``skip`` (not a ``<tool>`` file), ``ok``, ``crash`` (the library raised),
+    or an invariant category naming the violated property. ``non-contiguous``
+    is reported too — it is an expected real-world property, not a library
+    bug. ``stats`` is the tool's contribution to the corpus statistics, or
+    ``None`` for ``skip``/``crash`` cases where it cannot be computed.
     """
     try:
         document = parse_tool(path).document
         if document is None or document.root.tag != "tool":
-            return "skip", "", ""
+            return "skip", "", "", None
         vector = validity_vector(path)
+        profiles = available_profiles()
+        newest_valid = next(
+            (
+                profile
+                for profile, ok in zip(
+                    reversed(profiles), reversed(vector), strict=True
+                )
+                if ok
+            ),
+            _PROFILE_NONE,
+        )
+        contiguous = is_contiguous(vector)
+        stats = ToolStats(
+            profile=document.root.get("profile") or _PROFILE_NONE,
+            newest_valid=newest_valid,
+            has_macros=has_macros(document.root),
+            contiguous=contiguous,
+        )
         for category, detail in (
             _check_immutable(document),
             _check_roundtrip(document),
@@ -256,13 +297,13 @@ def _exercise(path: Path) -> tuple[str, str, str]:
             _check_newest_valid_profile(path, vector),
         ):
             if category != "ok":
-                return category, detail, category
-        if not is_contiguous(vector):
+                return category, detail, category, stats
+        if not contiguous:
             run = "".join("1" if ok else "0" for ok in vector)
-            return "non-contiguous", f"validity vector: {run}", "non-contiguous"
+            return "non-contiguous", f"validity vector: {run}", "non-contiguous", stats
     except Exception as exc:  # diagnostic sweep: every crash is a finding
-        return "crash", traceback.format_exc(), _signature(exc)
-    return "ok", "", ""
+        return "crash", traceback.format_exc(), _signature(exc), None
+    return "ok", "", "", stats
 
 
 def _signature(exc: BaseException) -> str:
@@ -328,6 +369,156 @@ def _append_provenance(retained: list[tuple[str, str, Path, str, str]]) -> None:
     path.write_text(existing + "\n\n" + "\n".join(new) + "\n", encoding="utf-8")
 
 
+def _profile_sort_key(profile: str) -> tuple[int, ...]:
+    """Sort key: ``_PROFILE_NONE`` first, then numeric profiles oldest→newest.
+
+    Anything that isn't ``MAJOR.MINOR`` integers sorts after numeric profiles.
+    """
+    if profile == _PROFILE_NONE:
+        return (0,)
+    parts = profile.split(".")
+    if all(part.isdigit() for part in parts):
+        return (1, *(int(part) for part in parts))
+    return (2,)
+
+
+def _profile_sort_key_newest_first(profile: str) -> tuple[int, ...]:
+    """Sort key: numeric profiles newest→oldest, ``_PROFILE_NONE`` last."""
+    if profile == _PROFILE_NONE:
+        return (2,)
+    parts = profile.split(".")
+    if all(part.isdigit() for part in parts):
+        return (0, *(-int(part) for part in parts))
+    return (1,)
+
+
+def _bar(value: int, max_value: int, *, width: int = 30) -> str:
+    """Render an ASCII histogram bar (length scaled to ``max_value``)."""
+    if max_value == 0:
+        return ""
+    blocks = round(value / max_value * width)
+    return "█" * blocks
+
+
+def _format_distribution(title: str, counts: Counter[str], *, total: int) -> list[str]:
+    """Render a profile distribution as a markdown table with histogram bars."""
+    max_value = max(counts.values(), default=0)
+    lines = [
+        f"## {title}",
+        "",
+        "| Profile | Tools | % | Histogram |",
+        "|---|---:|---:|---|",
+    ]
+    for profile in sorted(counts, key=_profile_sort_key):
+        value = counts[profile]
+        pct = value / total * 100 if total else 0
+        lines.append(f"| {profile} | {value} | {pct:.1f}% | {_bar(value, max_value)} |")
+    return lines
+
+
+def _format_crosstab(crosstab: Counter[tuple[str, str]]) -> list[str]:
+    """Render the declared × newest-valid cross-tab as a markdown table.
+
+    Declared rows are oldest-first with ``_PROFILE_NONE`` first; newest-valid
+    columns are newest-first with ``_PROFILE_NONE`` last (the worst case).
+    """
+    declared = sorted({d for d, _ in crosstab}, key=_profile_sort_key)
+    newest = sorted({n for _, n in crosstab}, key=_profile_sort_key_newest_first)
+    lines = [
+        "## Declared × newest-valid (cross-tab)",
+        "",
+        "Rows: declared profile (oldest first). Columns: newest validating "
+        "profile (newest first). Read across a row to see where tools at a "
+        "given declared profile actually end up.",
+        "",
+    ]
+    lines.append("| declared \\\\ newest | " + " | ".join(newest) + " |")
+    lines.append("|---|" + "|".join(["---:"] * len(newest)) + "|")
+    for d in declared:
+        row = [d, *(str(crosstab.get((d, n), 0)) for n in newest)]
+        lines.append("| " + " | ".join(row) + " |")
+    return lines
+
+
+def _format_binary_table(
+    title: str, true_label: str, false_label: str, counts: Counter[bool]
+) -> list[str]:
+    """Render a true/false counter as a 2-row markdown table."""
+    true_count = counts.get(True, 0)
+    false_count = counts.get(False, 0)
+    total = true_count + false_count
+    lines = [f"## {title}", "", "| | Tools | % |", "|---|---:|---:|"]
+    if total == 0:
+        lines.append("| _(no data)_ |  |  |")
+        return lines
+    true_pct = true_count / total * 100
+    false_pct = false_count / total * 100
+    lines.append(f"| {true_label} | {true_count} | {true_pct:.1f}% |")
+    lines.append(f"| {false_label} | {false_count} | {false_pct:.1f}% |")
+    return lines
+
+
+def _write_stats(
+    *,
+    repos: list[tuple[str, str, int]],
+    declared_counts: Counter[str],
+    newest_valid_counts: Counter[str],
+    crosstab: Counter[tuple[str, str]],
+    macro_counts: Counter[bool],
+    contiguity_counts: Counter[bool],
+    total: int,
+) -> None:
+    """Write the corpus statistics artifact."""
+    _STATS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    lines: list[str] = [
+        "# Corpus statistics",
+        "",
+        f"Generated by `scripts/corpus_check.py` on {date.today().isoformat()}. "
+        f"Swept {total} tools across {len(repos)} repositories.",
+        "",
+        "This file is regenerated by every full run of `corpus_check.py` "
+        "unless `--no-stats` is given; partial sweeps (`--limit` or `--repo`) "
+        "do not regenerate it. Per-repo commit SHAs make the snapshot "
+        "reproducible.",
+        "",
+        "## Repositories",
+        "",
+        "| Repository | Commit | Tools |",
+        "|---|---|---:|",
+    ]
+    for name, commit, count in sorted(repos):
+        lines.append(f"| {name} | `{commit[:12]}` | {count} |")
+    lines.append("")
+    lines.extend(
+        _format_distribution(
+            "Declared profile distribution", declared_counts, total=total
+        )
+    )
+    lines.append("")
+    lines.extend(
+        _format_distribution(
+            "Newest valid profile distribution", newest_valid_counts, total=total
+        )
+    )
+    lines.append("")
+    lines.extend(_format_crosstab(crosstab))
+    lines.append("")
+    lines.extend(
+        _format_binary_table("Macro usage", "Uses macros", "Macro-free", macro_counts)
+    )
+    lines.append("")
+    lines.extend(
+        _format_binary_table(
+            "Validity-vector contiguity",
+            "Contiguous valid range",
+            "Non-contiguous",
+            contiguity_counts,
+        )
+    )
+    lines.append("")
+    _STATS_FILE.write_text("\n".join(lines), encoding="utf-8")
+
+
 def main(argv: list[str]) -> int:
     """Sweep the corpora, report findings, and retain new regression fixtures."""
     parser = argparse.ArgumentParser(
@@ -339,6 +530,14 @@ def main(argv: list[str]) -> int:
         type=int,
         default=0,
         help="stop after N tools total (0 sweeps everything)",
+    )
+    parser.add_argument(
+        "--no-stats",
+        action="store_true",
+        help=(
+            "don't regenerate the corpus stats artifact "
+            f"({_STATS_FILE.relative_to(_REPO_ROOT)})"
+        ),
     )
     args = parser.parse_args(argv)
 
@@ -353,20 +552,34 @@ def main(argv: list[str]) -> int:
     signatures: Counter[str] = Counter()
     retained_signatures = _known_signatures()
     retained: list[tuple[str, str, Path, str, str]] = []
+    repo_tool_counts: list[tuple[str, str, int]] = []
+    declared_counts: Counter[str] = Counter()
+    newest_valid_counts: Counter[str] = Counter()
+    crosstab: Counter[tuple[str, str]] = Counter()
+    macro_counts: Counter[bool] = Counter()
+    contiguity_counts: Counter[bool] = Counter()
     for name, url in repos:
         repo_dir = _clone_repo(name, url)
         if repo_dir is None:
             continue
         commit = _corpus_commit(repo_dir)
+        repo_tool_count = 0
         for path in sorted(repo_dir.rglob("*.xml")):
             if args.limit and tools >= args.limit:
                 break
             if not path.is_file():
                 continue  # broken symlink or non-regular file — not a tool
-            status, detail, signature = _exercise(path)
+            status, detail, signature, stats = _exercise(path)
             if status == "skip":
                 continue
             tools += 1
+            repo_tool_count += 1
+            if stats is not None:
+                declared_counts[stats.profile] += 1
+                newest_valid_counts[stats.newest_valid] += 1
+                crosstab[(stats.profile, stats.newest_valid)] += 1
+                macro_counts[stats.has_macros] += 1
+                contiguity_counts[stats.contiguous] += 1
             if tools % 500 == 0:
                 print(f"  ... {tools} tools", file=sys.stderr)
             if status == "ok":
@@ -382,6 +595,7 @@ def main(argv: list[str]) -> int:
                     f"  retained -> {dest}"
                 )
                 print("  " + detail.strip().replace("\n", "\n  "))
+        repo_tool_counts.append((name, commit, repo_tool_count))
         if args.limit and tools >= args.limit:
             break
 
@@ -398,6 +612,25 @@ def main(argv: list[str]) -> int:
         print(
             f"\nretained {len(retained)} new regression fixture(s) under {_REGRESSIONS}"
         )
+    stats_path = _STATS_FILE.relative_to(_REPO_ROOT)
+    if args.no_stats:
+        pass
+    elif args.limit or args.repo:
+        print(
+            f"\ncorpus stats not regenerated: partial sweep "
+            f"(--limit or --repo). Run the full sweep to refresh {stats_path}."
+        )
+    else:
+        _write_stats(
+            repos=repo_tool_counts,
+            declared_counts=declared_counts,
+            newest_valid_counts=newest_valid_counts,
+            crosstab=crosstab,
+            macro_counts=macro_counts,
+            contiguity_counts=contiguity_counts,
+            total=tools,
+        )
+        print(f"\ncorpus stats -> {stats_path}")
     return 0
 
 
