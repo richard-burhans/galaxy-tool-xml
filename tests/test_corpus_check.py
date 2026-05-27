@@ -278,11 +278,11 @@ def test_failure_slug_renders_filesystem_safe() -> None:
 
 
 def test_tool_source_url_constructs_toolshed_link() -> None:
+    # Toolshed hgweb routes are 403 behind nginx, so we link to the
+    # public `/view/<owner>/<name>` browse page only — the file path and
+    # changeset are rendered in adjacent table columns.
     url = _tool_source_url("richard-burhans/kegalign", "f885abcfe3a0", "kegalign.xml")
-    assert url == (
-        "https://toolshed.g2.bx.psu.edu/repos/richard-burhans/kegalign/"
-        "file/f885abcfe3a0/kegalign.xml"
-    )
+    assert url == "https://toolshed.g2.bx.psu.edu/view/richard-burhans/kegalign"
 
 
 def test_tool_source_url_constructs_github_link() -> None:

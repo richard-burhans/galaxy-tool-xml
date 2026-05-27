@@ -4,6 +4,6 @@
 
 | Repository | tool_id | Path | Version | Source |
 |---|---|---|---|---|
-| dazeone/kleborate | `kleboratetool` | `kleborate.xml` | `83ec88b8c1b3` | [view](https://toolshed.g2.bx.psu.edu/repos/dazeone/kleborate/file/83ec88b8c1b3/kleborate.xml) |
-| devteam/picard_plus | `picard_MarkDuplicatesWithMateCigar` | `picard_MarkDuplicatesWithMateCigar.xml` | `4aa5b444fd42` | [view](https://toolshed.g2.bx.psu.edu/repos/devteam/picard_plus/file/4aa5b444fd42/picard_MarkDuplicatesWithMateCigar.xml) |
-| thanhlv/medaka | `medaka` | `medaka.xml` | `c830020a14e9` | [view](https://toolshed.g2.bx.psu.edu/repos/thanhlv/medaka/file/c830020a14e9/medaka.xml) |
+| dazeone/kleborate | `kleboratetool` | `kleborate.xml` | `83ec88b8c1b3` | [view](https://toolshed.g2.bx.psu.edu/view/dazeone/kleborate) |
+| devteam/picard_plus | `picard_MarkDuplicatesWithMateCigar` | `picard_MarkDuplicatesWithMateCigar.xml` | `4aa5b444fd42` | [view](https://toolshed.g2.bx.psu.edu/view/devteam/picard_plus) |
+| thanhlv/medaka | `medaka` | `medaka.xml` | `c830020a14e9` | [view](https://toolshed.g2.bx.psu.edu/view/thanhlv/medaka) |

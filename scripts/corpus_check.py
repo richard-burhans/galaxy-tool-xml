@@ -110,7 +110,13 @@ _FINE_GRAINED_PROFILE_COLUMNS = (
     "no_valid_reason",
 )
 _FAILURE_DETAILS_SUBDIR = "failures"
-_TOOLSHED_BASE_URL = "https://toolshed.g2.bx.psu.edu/repos"
+# The toolshed's hgweb routes (`/repos/<o>/<n>/file/<rev>/...`) all return
+# 403 Forbidden behind nginx; only the `/view/<owner>/<name>` UI is
+# publicly reachable, so failure-page links land on the repo's browse
+# page rather than a deep link to the specific file at the specific
+# changeset. The path + version columns in the table tell the user
+# what to navigate to once they're there.
+_TOOLSHED_VIEW_URL = "https://toolshed.g2.bx.psu.edu/view"
 _SOURCES = ("github", "toolshed", "combined")
 _COMBINED_SUB_SOURCES = ("github", "toolshed")
 _PROFILE_NONE = "(none)"
@@ -969,7 +975,11 @@ def _tool_source_url(repo: str, version: str, path: str) -> str | None:
     if version == _UNKNOWN:
         return None
     if "/" in repo:
-        return f"{_TOOLSHED_BASE_URL}/{repo}/file/{version}/{path}"
+        # `version` and `path` are intentionally not embedded: the toolshed
+        # only exposes the `/view/<owner>/<name>` UI publicly. The user
+        # navigates to the file from the repo's browse page (the path is
+        # rendered separately in the table for that purpose).
+        return f"{_TOOLSHED_VIEW_URL}/{repo}"
     sources = dict(_corpus_sources())
     clone_url = sources.get(repo)
     if clone_url is None:
