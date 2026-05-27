@@ -1,0 +1,968 @@
+#!/usr/bin/env python3
+"""Master dispatcher for empirical measurements that inform ``docs/decisions.md`` §10.
+
+Each subcommand answers one specific empirical question against the
+committed corpus artifacts (``docs/corpus_data/combined_corpus_data.json``)
+or, where needed, the on-disk corpus tree under ``corpus/``. The output
+of each subcommand is shaped for direct lift into a §10 measurement
+entry — counts, percentages, exemplar tool paths.
+
+Adding a measurement: write ``_measure_<slug>`` and ``_report_<slug>``
+helpers, then register them in ``_SUBCOMMANDS`` at the bottom. Keep
+``_measure_*`` pure (no printing); confine printing to ``_report_*``
+so the measurement can be tested or composed without I/O noise.
+
+Run::
+
+    uv run python scripts/measure.py --list               # list available
+    uv run python scripts/measure.py lenient-text-fields  # one measurement
+    uv run python scripts/measure.py --all                # every measurement
+
+Companion to the project memory entries on
+``use-corpus-for-questions`` and ``measurements-as-scripts``.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import logging
+import subprocess
+import sys
+from collections import Counter, defaultdict
+from collections.abc import Callable, Iterable
+from concurrent.futures import ThreadPoolExecutor
+from functools import cache
+from pathlib import Path
+
+from lxml import etree
+
+logger = logging.getLogger("measure")
+
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+_CORPUS_ROOT = _REPO_ROOT / "corpus"
+_COMBINED_DATA = _REPO_ROOT / "docs" / "corpus_data" / "combined_corpus_data.json"
+
+
+# --- shared utilities -----------------------------------------------------------
+
+
+@cache
+def _load_combined_data(*, path: Path = _COMBINED_DATA) -> list[dict[str, object]]:
+    """Return the full combined-corpus rows list, or fail loudly.
+
+    Cached so that ``--all`` (which invokes every measurement in turn) reads
+    the JSON exactly once. The cache key is ``path``; passing a different
+    file re-loads.
+    """
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"{path} not found; run `uv run python scripts/corpus_check.py "
+            f"--source combined` first."
+        )
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _unique_by_sha(rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    """Mirror the failure-page first-sha-wins dedup so counts reconcile."""
+    seen: set[str] = set()
+    unique: list[dict[str, object]] = []
+    for row in rows:
+        sha = row.get("sha256")
+        if not isinstance(sha, str) or sha in seen:
+            continue
+        seen.add(sha)
+        unique.append(row)
+    return unique
+
+
+def _validity_columns(rows: list[dict[str, object]]) -> tuple[str, ...]:
+    """Return the vendored profile suffixes (oldest→newest) from the row schema."""
+    if not rows:
+        return ()
+    keys = [k for k in rows[0] if isinstance(k, str) and k.startswith("valid_")]
+    return tuple(
+        sorted(
+            (k.removeprefix("valid_") for k in keys),
+            key=lambda v: tuple(int(part) for part in v.split(".")),
+        )
+    )
+
+
+def _iter_corpus_tool_xmls(corpus_root: Path) -> Iterable[Path]:
+    """Yield every XML file under ``corpus_root`` excluding Mercurial metadata."""
+    for path in corpus_root.rglob("*.xml"):
+        if ".hg/" in str(path):
+            continue
+        yield path
+
+
+def _parse_tool_root(path: Path) -> etree._Element | None:
+    """Return the parsed root if it is ``<tool>``, else ``None``.
+
+    Uses ``recover=True`` to match the lenient sweep semantics in
+    ``corpus_check.py``. ``None`` covers a missing file, a hard parse
+    failure, or a non-``<tool>`` root.
+    """
+    if not path.is_file():
+        return None
+    parser = etree.XMLParser(recover=True, strip_cdata=False)
+    with path.open("rb") as fh:
+        tree = etree.parse(fh, parser)
+    root = tree.getroot() if tree is not None else None
+    if root is None or root.tag != "tool":
+        return None
+    return root
+
+
+# --- measurement: lenient-text-fields -------------------------------------------
+#
+# Justifies _patch_xsdata_primitive_node_leniency in document.py.
+
+_TEXT_STYLE_ELEMENTS: frozenset[str] = frozenset(
+    {
+        "citation",
+        "command",
+        "configfile",
+        "container",
+        "description",
+        "display",
+        "environment_variable",
+        "expression",
+        "file",
+        "help",
+        "label",
+        "postprocess_expression",
+        "request_body",
+        "request_headers",
+        "requirement",
+        "resource",
+        "validator",
+        "version_command",
+    }
+)
+
+
+def _measure_lenient_text_fields(*, corpus_root: Path) -> dict[str, object]:
+    """Count text-style elements that carry element children in the corpus."""
+    counts_total: Counter[str] = Counter()
+    counts_with_children: Counter[str] = Counter()
+    exemplars: dict[str, list[tuple[str, str]]] = defaultdict(list)
+    affected_tools: set[str] = set()
+    parsed = 0
+    skipped = 0
+
+    for path in _iter_corpus_tool_xmls(corpus_root):
+        try:
+            root = _parse_tool_root(path)
+        except (etree.XMLSyntaxError, OSError):
+            skipped += 1
+            continue
+        if root is None:
+            continue
+        parsed += 1
+        for element in root.iter():
+            if not isinstance(element.tag, str):
+                continue
+            if element.tag not in _TEXT_STYLE_ELEMENTS:
+                continue
+            counts_total[element.tag] += 1
+            child_tags = [c.tag for c in element if isinstance(c.tag, str)]
+            if not child_tags:
+                continue
+            counts_with_children[element.tag] += 1
+            affected_tools.add(str(path.relative_to(_REPO_ROOT)))
+            if len(exemplars[element.tag]) < 5:
+                exemplars[element.tag].append(
+                    (str(path.relative_to(_REPO_ROOT)), child_tags[0])
+                )
+
+    return {
+        "parsed_tool_files": parsed,
+        "unparseable_files_skipped": skipped,
+        "counts_total": counts_total,
+        "counts_with_children": counts_with_children,
+        "affected_tools": affected_tools,
+        "exemplars": dict(exemplars),
+    }
+
+
+def _report_lenient_text_fields(measurement: dict[str, object]) -> None:
+    counts_total: Counter[str] = measurement["counts_total"]  # type: ignore[assignment]
+    counts_with_children: Counter[str] = measurement["counts_with_children"]  # type: ignore[assignment]
+    exemplars: dict[str, list[tuple[str, str]]] = measurement["exemplars"]  # type: ignore[assignment]
+    affected: set[str] = measurement["affected_tools"]  # type: ignore[assignment]
+    parsed = measurement["parsed_tool_files"]
+    skipped = measurement["unparseable_files_skipped"]
+
+    print("\n=== lenient-text-fields ===")
+    print(f"Parsed {parsed} <tool> files; skipped {skipped} unparseable.\n")
+    header = f"{'element':22s} {'occurrences':>12s} {'with_children':>14s} {'rate':>8s}"
+    print(header)
+    print("-" * 60)
+    total_occ = 0
+    total_children = 0
+    for name in sorted(_TEXT_STYLE_ELEMENTS):
+        occurrences = counts_total.get(name, 0)
+        with_children = counts_with_children.get(name, 0)
+        if occurrences == 0:
+            continue
+        total_occ += occurrences
+        total_children += with_children
+        rate = 100 * with_children / occurrences
+        row = f"<{name + '>':21s} {occurrences:>12d} {with_children:>14d} {rate:>7.3f}%"
+        print(row)
+    print("-" * 60)
+    overall_rate = 100 * total_children / total_occ if total_occ else 0
+    print(f"{'TOTAL':22s} {total_occ:>12d} {total_children:>14d} {overall_rate:>7.3f}%")
+    print(f"\nDistinct affected tools: {len(affected)}")
+    print("\nExemplars (first 3 per element):")
+    for name in sorted(exemplars):
+        seen = exemplars[name]
+        if not seen:
+            continue
+        print(f"  <{name}>:")
+        for tool_path, child_tag in seen[:3]:
+            print(f"    {tool_path}  ← child <{child_tag}>")
+
+
+def _run_lenient_text_fields(args: argparse.Namespace) -> None:
+    _report_lenient_text_fields(
+        _measure_lenient_text_fields(corpus_root=args.corpus_root)
+    )
+
+
+# --- measurement: validity-distribution -----------------------------------------
+#
+# A1 (validates-at-latest), A2 (non-contiguous %), A6 (declared and newest-valid
+# distributions). All derived from combined_corpus_data.json.
+
+
+def _is_contiguous(vector: tuple[int, ...]) -> bool:
+    """A validity vector is contiguous when it has at most one 0/1 transition."""
+    return sum(1 for i in range(1, len(vector)) if vector[i] != vector[i - 1]) <= 1
+
+
+def _measure_validity_distribution(
+    *, rows: list[dict[str, object]]
+) -> dict[str, object]:
+    """Compute A1, A2, A6 from the combined data file."""
+    unique = _unique_by_sha(rows)
+    val_cols = _validity_columns(rows)
+    if not val_cols:
+        raise ValueError("no validity columns in combined data — wrong artifact?")
+    latest = val_cols[-1]
+    declared = Counter(row.get("profile_expanded") for row in unique)
+    newest = Counter(row.get("newest_valid") for row in unique)
+    n_at_latest = sum(1 for row in unique if row.get("newest_valid") == latest)
+    n_no_valid = sum(
+        1 for row in unique if row.get("newest_valid") in (None, "", "(none)")
+    )
+    n_noncontig = sum(
+        1
+        for row in unique
+        if not _is_contiguous(tuple(int(row[f"valid_{p}"]) for p in val_cols))  # type: ignore[arg-type]
+    )
+    return {
+        "n_total_rows": len(rows),
+        "n_unique_tools": len(unique),
+        "latest_profile": latest,
+        "n_vendored_profiles": len(val_cols),
+        "n_validates_at_latest": n_at_latest,
+        "n_no_valid_profile": n_no_valid,
+        "n_noncontiguous": n_noncontig,
+        "declared_top10": declared.most_common(10),
+        "newest_top10": newest.most_common(10),
+    }
+
+
+def _report_validity_distribution(measurement: dict[str, object]) -> None:
+    n_unique = measurement["n_unique_tools"]
+    latest = measurement["latest_profile"]
+    n_at_latest = measurement["n_validates_at_latest"]
+    n_no_valid = measurement["n_no_valid_profile"]
+    n_noncontig = measurement["n_noncontiguous"]
+    declared: list[tuple[object, int]] = measurement["declared_top10"]  # type: ignore[assignment]
+    newest: list[tuple[object, int]] = measurement["newest_top10"]  # type: ignore[assignment]
+
+    print("\n=== validity-distribution ===")
+    print(
+        f"Combined sweep: {measurement['n_total_rows']} rows, "
+        f"{n_unique} unique tools, latest profile {latest} "
+        f"({measurement['n_vendored_profiles']} vendored)."
+    )
+    print(
+        f"A1 — validates at latest ({latest}): "
+        f"{n_at_latest} / {n_unique} ({100 * n_at_latest / n_unique:.1f}%)"
+    )
+    print(
+        f"A2 — non-contiguous validity vector: "
+        f"{n_noncontig} / {n_unique} ({100 * n_noncontig / n_unique:.2f}%)"
+    )
+    print(
+        f"     no valid vendored profile: "
+        f"{n_no_valid} / {n_unique} ({100 * n_no_valid / n_unique:.1f}%)"
+    )
+    print("\nA6 — top declared profiles (post-expansion):")
+    for profile, count in declared:
+        print(f"  {profile!s:25s} {count:5d}  ({100 * count / n_unique:.1f}%)")
+    print("\nA6 — top newest-valid profiles:")
+    for profile, count in newest:
+        print(f"  {profile!s:25s} {count:5d}  ({100 * count / n_unique:.1f}%)")
+
+
+def _run_validity_distribution(args: argparse.Namespace) -> None:
+    _report_validity_distribution(
+        _measure_validity_distribution(rows=_load_combined_data(path=args.data))
+    )
+
+
+# --- measurement: expansion-failed-ids ------------------------------------------
+#
+# A3 — among tools whose macro expansion failed, how often does the fallback
+# raw @id literally contain a macro token like `@FOO@`?
+
+
+def _measure_expansion_failed_ids(
+    *, rows: list[dict[str, object]]
+) -> dict[str, object]:
+    """Tally `@`-containing tool_id values among expansion-failed tools."""
+    unique = _unique_by_sha(rows)
+    failed = [row for row in unique if row.get("expansion_failure_reason")]
+    with_at = [
+        row
+        for row in failed
+        if isinstance(row.get("tool_id"), str) and "@" in row["tool_id"]  # type: ignore[operator]
+    ]
+    return {
+        "n_expansion_failed": len(failed),
+        "n_tool_id_with_at": len(with_at),
+        "exemplar_tool_ids": sorted({str(row["tool_id"]) for row in failed})[:10],
+    }
+
+
+def _report_expansion_failed_ids(measurement: dict[str, object]) -> None:
+    failed = measurement["n_expansion_failed"]
+    with_at = measurement["n_tool_id_with_at"]
+    examples: list[str] = measurement["exemplar_tool_ids"]  # type: ignore[assignment]
+    rate = 100 * with_at / failed if failed else 0
+    print("\n=== expansion-failed-ids ===")
+    print(
+        f"A3 — expansion-failed tools: {failed}; "
+        f"tool_id contains '@': {with_at} ({rate:.1f}%)"
+    )
+    print("Exemplar tool_id values seen on expansion-failed rows:")
+    for example in examples:
+        print(f"  {example!r}")
+
+
+def _run_expansion_failed_ids(args: argparse.Namespace) -> None:
+    _report_expansion_failed_ids(
+        _measure_expansion_failed_ids(rows=_load_combined_data(path=args.data))
+    )
+
+
+# --- measurement: macro-placeholder-profile -------------------------------------
+#
+# The abstract claim that ~16% of tools encode their profile attribute as a
+# macro token (e.g., `@PROFILE@`) — measurable from profile_raw.
+
+
+def _looks_like_version(value: object) -> bool:
+    """Return ``True`` iff ``value`` is a literal ``MAJOR.MINOR`` version."""
+    if not isinstance(value, str):
+        return False
+    parts = value.split(".")
+    return len(parts) == 2 and all(part.isdigit() for part in parts)
+
+
+def _measure_macro_placeholder_profile(
+    *, rows: list[dict[str, object]]
+) -> dict[str, object]:
+    """Count tools whose ``profile_raw`` is a macro placeholder string."""
+    unique = _unique_by_sha(rows)
+    with_macro_profile = [
+        row
+        for row in unique
+        if isinstance(row.get("profile_raw"), str)
+        and row["profile_raw"] != "(none)"
+        and not _looks_like_version(row["profile_raw"])
+    ]
+    placeholder_values = sorted(
+        {
+            row["profile_raw"]  # type: ignore[index]
+            for row in with_macro_profile
+        }
+    )
+    return {
+        "n_unique_tools": len(unique),
+        "n_with_macro_placeholder": len(with_macro_profile),
+        "distinct_placeholder_values": placeholder_values,
+    }
+
+
+def _report_macro_placeholder_profile(measurement: dict[str, object]) -> None:
+    unique = measurement["n_unique_tools"]
+    with_macro = measurement["n_with_macro_placeholder"]
+    values: list[str] = measurement["distinct_placeholder_values"]  # type: ignore[assignment]
+    rate = 100 * with_macro / unique if unique else 0
+    print("\n=== macro-placeholder-profile ===")
+    print(
+        f"Tools whose profile attribute is a macro placeholder: "
+        f"{with_macro} / {unique} ({rate:.1f}%)"
+    )
+    print(f"Distinct placeholder values seen: {len(values)}")
+    for value in values[:15]:
+        print(f"  {value!r}")
+
+
+def _run_macro_placeholder_profile(args: argparse.Namespace) -> None:
+    _report_macro_placeholder_profile(
+        _measure_macro_placeholder_profile(rows=_load_combined_data(path=args.data))
+    )
+
+
+# --- measurement: tool-id-vs-path -----------------------------------------------
+#
+# §10.1 — verify the @id presence rate, macro-token rate, and how often @id
+# coincides with the file stem or parent directory name. The post-expansion
+# tool_id is in combined_corpus_data.json; the path is too — so the comparison
+# is a JSON walk, no corpus re-walk needed.
+
+
+def _measure_tool_id_vs_path(*, rows: list[dict[str, object]]) -> dict[str, object]:
+    """Compute @id presence, macro-token rate, and path/stem/parent agreement."""
+    unique = _unique_by_sha(rows)
+    n_with_id = sum(1 for row in unique if row.get("tool_id"))
+    n_with_macro_token = sum(
+        1
+        for row in unique
+        if isinstance(row.get("tool_id"), str) and "@" in row["tool_id"]  # type: ignore[operator]
+    )
+    n_stem_match = 0
+    n_parent_match = 0
+    for row in unique:
+        tool_id = row.get("tool_id")
+        path = row.get("path")
+        if not isinstance(tool_id, str) or not isinstance(path, str):
+            continue
+        parts = path.split("/")
+        stem = parts[-1].removesuffix(".xml")
+        if stem == tool_id:
+            n_stem_match += 1
+        if len(parts) >= 2 and parts[-2] == tool_id:
+            n_parent_match += 1
+    return {
+        "n_unique_tools": len(unique),
+        "n_with_id": n_with_id,
+        "n_with_macro_token_in_id": n_with_macro_token,
+        "n_id_matches_file_stem": n_stem_match,
+        "n_id_matches_parent_dir": n_parent_match,
+    }
+
+
+def _report_tool_id_vs_path(measurement: dict[str, object]) -> None:
+    unique = measurement["n_unique_tools"]
+    with_id = measurement["n_with_id"]
+    with_macro = measurement["n_with_macro_token_in_id"]
+    stem = measurement["n_id_matches_file_stem"]
+    parent = measurement["n_id_matches_parent_dir"]
+    pct = lambda n: 100 * n / unique if unique else 0  # noqa: E731
+    print("\n=== tool-id-vs-path ===")
+    print(
+        f"Of {unique} unique <tool> files:\n"
+        f"  @id present:                  {with_id} ({pct(with_id):.1f}%)\n"
+        f"  @id contains a macro token:   {with_macro} ({pct(with_macro):.1f}%)\n"
+        f"  @id matches the file stem:    {stem} ({pct(stem):.1f}%)\n"
+        f"  @id matches the parent dir:   {parent} ({pct(parent):.1f}%)"
+    )
+
+
+def _run_tool_id_vs_path(args: argparse.Namespace) -> None:
+    _report_tool_id_vs_path(
+        _measure_tool_id_vs_path(rows=_load_combined_data(path=args.data))
+    )
+
+
+# --- measurement: corpus-size-source-mix ----------------------------------------
+#
+# §10.2 — total rows, unique tools, per-source contribution, repo counts.
+
+
+def _measure_corpus_size_source_mix(
+    *, rows: list[dict[str, object]]
+) -> dict[str, object]:
+    """Tally per-source row counts, unique counts, and distinct repos."""
+    unique = _unique_by_sha(rows)
+    gh_rows = [
+        r for r in rows if isinstance(r.get("repo"), str) and "/" not in r["repo"]
+    ]  # type: ignore[operator]
+    ts_rows = [r for r in rows if isinstance(r.get("repo"), str) and "/" in r["repo"]]  # type: ignore[operator]
+    gh_unique = [
+        r
+        for r in unique
+        if isinstance(r.get("repo"), str) and "/" not in r["repo"]  # type: ignore[operator]
+    ]
+    ts_unique = [
+        r
+        for r in unique
+        if isinstance(r.get("repo"), str) and "/" in r["repo"]  # type: ignore[operator]
+    ]
+    return {
+        "n_total_rows": len(rows),
+        "n_unique_tools": len(unique),
+        "n_duplicate_rows": len(rows) - len(unique),
+        "n_github_rows": len(gh_rows),
+        "n_toolshed_rows": len(ts_rows),
+        "n_github_unique_credited": len(gh_unique),
+        "n_toolshed_unique_credited": len(ts_unique),
+        "n_github_repos": len({r["repo"] for r in gh_rows}),
+        "n_toolshed_repos": len({r["repo"] for r in ts_rows}),
+    }
+
+
+def _report_corpus_size_source_mix(measurement: dict[str, object]) -> None:
+    print("\n=== corpus-size-source-mix ===")
+    print(f"Total rows in combined data:    {measurement['n_total_rows']}")
+    print(f"Unique tools (sha256 dedup):    {measurement['n_unique_tools']}")
+    print(f"Duplicate occurrences dropped:  {measurement['n_duplicate_rows']}")
+    print(
+        f"  github rows:                  {measurement['n_github_rows']} "
+        f"(credited unique: {measurement['n_github_unique_credited']})"
+    )
+    print(
+        f"  toolshed rows:                {measurement['n_toolshed_rows']} "
+        f"(credited unique: {measurement['n_toolshed_unique_credited']})"
+    )
+    print(f"Distinct github repos in data:  {measurement['n_github_repos']}")
+    print(f"Distinct toolshed repos in data: {measurement['n_toolshed_repos']}")
+
+
+def _run_corpus_size_source_mix(args: argparse.Namespace) -> None:
+    _report_corpus_size_source_mix(
+        _measure_corpus_size_source_mix(rows=_load_combined_data(path=args.data))
+    )
+
+
+# --- measurement: no-valid-profile-taxonomy -------------------------------------
+#
+# §10.4 — break the 8.1% no-valid-profile bucket into named reason categories.
+# Reads expansion_failure_reason and no_valid_reason columns directly.
+
+
+def _measure_no_valid_profile_taxonomy(
+    *, rows: list[dict[str, object]]
+) -> dict[str, object]:
+    """Categorise the no-valid-profile tools by reason."""
+    unique = _unique_by_sha(rows)
+    no_valid = [r for r in unique if r.get("newest_valid") in (None, "", "(none)")]
+    group_a = Counter(  # macro-expansion failures
+        r["expansion_failure_reason"]
+        for r in no_valid
+        if isinstance(r.get("expansion_failure_reason"), str)
+    )
+    group_b = Counter(  # XSD rejects (excluding the macro-expansion-failed bucket)
+        r["no_valid_reason"]
+        for r in no_valid
+        if isinstance(r.get("no_valid_reason"), str)
+        and r["no_valid_reason"] != "(macro expansion failed)"
+    )
+    return {
+        "n_unique_tools": len(unique),
+        "n_no_valid": len(no_valid),
+        "group_a_counts": group_a.most_common(),
+        "group_b_counts": group_b.most_common(),
+    }
+
+
+def _report_no_valid_profile_taxonomy(measurement: dict[str, object]) -> None:
+    unique = measurement["n_unique_tools"]
+    no_valid = measurement["n_no_valid"]
+    group_a: list[tuple[str, int]] = measurement["group_a_counts"]  # type: ignore[assignment]
+    group_b: list[tuple[str, int]] = measurement["group_b_counts"]  # type: ignore[assignment]
+    rate = 100 * no_valid / unique if unique else 0
+    print("\n=== no-valid-profile-taxonomy ===")
+    print(
+        f"§10.4 — {no_valid} / {unique} ({rate:.1f}%) tools do not validate "
+        f"against any vendored XSD."
+    )
+    a_total = sum(n for _, n in group_a)
+    print(f"\nGroup A — macro expansion failed ({a_total} tools):")
+    for reason, count in group_a:
+        print(f"  {count:5d}  {reason}")
+    b_total = sum(n for _, n in group_b)
+    print(f"\nGroup B — expansion ok, XSD rejects everywhere ({b_total} tools):")
+    for reason, count in group_b:
+        print(f"  {count:5d}  {reason}")
+
+
+def _run_no_valid_profile_taxonomy(args: argparse.Namespace) -> None:
+    _report_no_valid_profile_taxonomy(
+        _measure_no_valid_profile_taxonomy(rows=_load_combined_data(path=args.data))
+    )
+
+
+# --- measurement: macro-usage ---------------------------------------------------
+#
+# The "Macro usage" stats section claims ~55% of tools use macros. The
+# has_macros column isn't in combined_corpus_data.json, so re-derive from the
+# corpus tree using the library's own ``has_macros()``. This is the slow
+# variant (parses every tool) but matches the canonical detector exactly.
+
+
+def _measure_macro_usage(*, corpus_root: Path) -> dict[str, object]:
+    """Re-walk the corpus and count tools that use Galaxy macros."""
+    from galaxy_tool_xml.macros import has_macros
+
+    seen_sha: set[str] = set()
+    n_with_macros = 0
+    n_without_macros = 0
+    n_parsed = 0
+    n_skipped = 0
+    import hashlib
+
+    for path in _iter_corpus_tool_xmls(corpus_root):
+        if not path.is_file():
+            continue
+        sha = hashlib.sha256(path.read_bytes()).hexdigest()
+        if sha in seen_sha:
+            continue
+        seen_sha.add(sha)
+        try:
+            root = _parse_tool_root(path)
+        except (etree.XMLSyntaxError, OSError):
+            n_skipped += 1
+            continue
+        if root is None:
+            continue
+        n_parsed += 1
+        if has_macros(root):
+            n_with_macros += 1
+        else:
+            n_without_macros += 1
+    return {
+        "n_unique_tools": n_parsed,
+        "n_with_macros": n_with_macros,
+        "n_without_macros": n_without_macros,
+        "n_unparseable_skipped": n_skipped,
+    }
+
+
+def _report_macro_usage(measurement: dict[str, object]) -> None:
+    unique = measurement["n_unique_tools"]
+    with_m = measurement["n_with_macros"]
+    without_m = measurement["n_without_macros"]
+    skipped = measurement["n_unparseable_skipped"]
+    rate = 100 * with_m / unique if unique else 0
+    print("\n=== macro-usage ===")
+    print(
+        f"Unique tools parsed (sha256-deduped): {unique}; "
+        f"unparseable skipped: {skipped}"
+    )
+    print(f"  Uses macros: {with_m} ({rate:.1f}%)")
+    print(f"  Macro-free:  {without_m} ({100 - rate:.1f}%)")
+
+
+def _run_macro_usage(args: argparse.Namespace) -> None:
+    _report_macro_usage(_measure_macro_usage(corpus_root=args.corpus_root))
+
+
+# --- measurement: corrections-cutoff --------------------------------------------
+#
+# Justifies the ``_CUTOFF = 0.8`` constant in src/galaxy_tool_xml/corrections.py.
+# For each of the no-valid-profile tools whose reason is "XSD does not declare
+# attribute used by tool" (~351), monkey-patch `_CUTOFF` to a sweep of values
+# and count how many tools yield at least one suggestion. The trade-off: a
+# lower cutoff produces more (and looser) suggestions; a higher cutoff produces
+# fewer (and tighter). The right cutoff sits in the knee of the curve.
+
+_CORRECTIONS_TARGET_REASON = "XSD does not declare attribute used by tool"
+
+
+def _row_to_xml_path(row: dict[str, object], *, corpus_root: Path) -> Path | None:
+    """Map a combined-corpus row to its XML file on disk.
+
+    Toolshed repos are stored under ``corpus/galaxy-toolshed/<owner>/<name>/``;
+    github repos are stored under ``corpus/<repo>/``. The row's ``path`` is
+    relative to that root. Returns ``None`` when either the row is missing
+    fields or the resolved path doesn't exist on disk (the file may have
+    been excluded from the corpus or its repo not yet cloned).
+    """
+    repo = row.get("repo")
+    sub_path = row.get("path")
+    if not isinstance(repo, str) or not isinstance(sub_path, str):
+        return None
+    if "/" in repo:
+        candidate = corpus_root / "galaxy-toolshed" / repo / sub_path
+    else:
+        candidate = corpus_root / repo / sub_path
+    return candidate if candidate.is_file() else None
+
+
+def _measure_corrections_cutoff(
+    *, rows: list[dict[str, object]], corpus_root: Path, cutoffs: tuple[float, ...]
+) -> dict[str, object]:
+    """Sweep ``_CUTOFF`` across ``cutoffs`` and tally suggestion outcomes."""
+    from galaxy_tool_xml import corrections as corrections_mod
+    from galaxy_tool_xml.corrections import suggest_corrections
+
+    unique = _unique_by_sha(rows)
+    targets = [
+        row
+        for row in unique
+        if row.get("no_valid_reason") == _CORRECTIONS_TARGET_REASON
+    ]
+    resolved_paths: list[Path] = []
+    missing = 0
+    for row in targets:
+        path = _row_to_xml_path(row, corpus_root=corpus_root)
+        if path is None:
+            missing += 1
+            continue
+        resolved_paths.append(path)
+
+    original_cutoff = corrections_mod._CUTOFF
+    results: dict[float, Counter[str]] = {cutoff: Counter() for cutoff in cutoffs}
+    suggestion_counts: dict[float, int] = {cutoff: 0 for cutoff in cutoffs}
+    try:
+        for cutoff in cutoffs:
+            corrections_mod._CUTOFF = cutoff
+            for path in resolved_paths:
+                corrections = suggest_corrections(path)
+                if any(c.kind == "attribute" for c in corrections):
+                    results[cutoff]["tools_with_attribute_suggestion"] += 1
+                suggestion_counts[cutoff] += sum(
+                    1 for c in corrections if c.kind == "attribute"
+                )
+    finally:
+        corrections_mod._CUTOFF = original_cutoff
+
+    return {
+        "n_target_tools": len(targets),
+        "n_resolved_on_disk": len(resolved_paths),
+        "n_missing_on_disk": missing,
+        "per_cutoff_tools": {
+            cutoff: results[cutoff]["tools_with_attribute_suggestion"]
+            for cutoff in cutoffs
+        },
+        "per_cutoff_suggestion_count": dict(suggestion_counts),
+        "default_cutoff": original_cutoff,
+    }
+
+
+def _report_corrections_cutoff(measurement: dict[str, object]) -> None:
+    targets = measurement["n_target_tools"]
+    resolved = measurement["n_resolved_on_disk"]
+    missing = measurement["n_missing_on_disk"]
+    per_cutoff_tools: dict[float, int] = measurement["per_cutoff_tools"]  # type: ignore[assignment]
+    per_cutoff_count: dict[float, int] = measurement["per_cutoff_suggestion_count"]  # type: ignore[assignment]
+    default_cutoff = measurement["default_cutoff"]
+    print("\n=== corrections-cutoff ===")
+    print(
+        f"Target failure category: {_CORRECTIONS_TARGET_REASON!r}\n"
+        f"  unique tools in category: {targets}\n"
+        f"  resolved to a file on disk: {resolved}\n"
+        f"  not found on disk:         {missing}\n"
+        f"  default cutoff in code:    {default_cutoff}"
+    )
+    header = (
+        f"\n{'cutoff':>8s} "
+        f"{'tools w/ ≥1 attr suggestion':>30s} "
+        f"{'total attr suggestions':>24s}"
+    )
+    print(header)
+    for cutoff, count in sorted(per_cutoff_tools.items()):
+        total = per_cutoff_count[cutoff]
+        rate = 100 * count / resolved if resolved else 0
+        print(f"{cutoff:>8.2f} {count:>22d} ({rate:>5.1f}%) {total:>26d}")
+
+
+def _run_corrections_cutoff(args: argparse.Namespace) -> None:
+    _report_corrections_cutoff(
+        _measure_corrections_cutoff(
+            rows=_load_combined_data(path=args.data),
+            corpus_root=args.corpus_root,
+            cutoffs=(0.6, 0.7, 0.75, 0.8, 0.85, 0.9),
+        )
+    )
+
+
+# --- passthrough: corpus-check --------------------------------------------------
+#
+# corpus_check.py is the canonical (and slow) sweep step. Exposing it here as a
+# passthrough subcommand unifies the CLI surface — `scripts/measure.py
+# corpus-check ...` and `scripts/corpus_check.py ...` are equivalent. The
+# heavy operation lives in corpus_check.py; this is just a delegated entry
+# point so callers can invoke everything through one master command.
+
+
+def _run_corpus_check(args: argparse.Namespace, extra: list[str]) -> int:
+    """Delegate to ``scripts/corpus_check.py``'s main with passthrough args."""
+    del args  # corpus_check parses its own
+    import corpus_check  # local import: avoids loading galaxy_tool_xml just to --list
+
+    return corpus_check.main(extra)
+
+
+# --- dispatcher -----------------------------------------------------------------
+#
+# Two registries: _MEASUREMENTS are cheap analyses that --all sweeps through;
+# _PASSTHROUGH are delegated to existing scripts and are too heavy / too
+# orthogonal to include in --all.
+
+
+_MEASUREMENTS: dict[str, Callable[[argparse.Namespace], None]] = {
+    "tool-id-vs-path": _run_tool_id_vs_path,
+    "corpus-size-source-mix": _run_corpus_size_source_mix,
+    "validity-distribution": _run_validity_distribution,
+    "no-valid-profile-taxonomy": _run_no_valid_profile_taxonomy,
+    "macro-usage": _run_macro_usage,
+    "macro-placeholder-profile": _run_macro_placeholder_profile,
+    "expansion-failed-ids": _run_expansion_failed_ids,
+    "lenient-text-fields": _run_lenient_text_fields,
+    "corrections-cutoff": _run_corrections_cutoff,
+}
+
+_PASSTHROUGH: dict[str, Callable[[argparse.Namespace, list[str]], int]] = {
+    "corpus-check": _run_corpus_check,
+}
+
+
+def _run_all_parallel(args: argparse.Namespace) -> int:
+    """Fan out every measurement as its own subprocess; print outputs in order.
+
+    Each subprocess re-invokes this script with the single measurement name
+    plus shared ``--data`` / ``--corpus-root`` flags, so the plugins stay
+    independent (no shared mutable state, each subprocess loads its own JSON).
+    Output is captured per subprocess and emitted in registration order so a
+    reader sees the same layout as the serial ``--all`` mode.
+
+    Worth the subprocess overhead when at least one slow measurement
+    (corpus-walking) is on the list — the per-process startup cost is
+    dwarfed by the parsing time saved. For the fast JSON-driven
+    measurements, this approach is no slower than serial.
+    """
+    base_cmd: list[str] = [
+        sys.executable,
+        str(Path(__file__).resolve()),
+        "--data",
+        str(args.data),
+        "--corpus-root",
+        str(args.corpus_root),
+    ]
+    futures: dict[str, object] = {}
+    with ThreadPoolExecutor(max_workers=args.jobs) as pool:
+        for name in _MEASUREMENTS:
+            futures[name] = pool.submit(
+                subprocess.run,
+                base_cmd + [name],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        for name in _MEASUREMENTS:
+            result: subprocess.CompletedProcess[str] = futures[name].result()  # type: ignore[assignment]
+            sys.stdout.write(result.stdout)
+            if result.returncode != 0:
+                sys.stderr.write(result.stderr)
+                logger.error("%s exited %d", name, result.returncode)
+    return 0
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Run an empirical measurement that informs docs/decisions.md §10, "
+            "or delegate to a passthrough subcommand like corpus-check."
+        )
+    )
+    parser.add_argument(
+        "--list",
+        action="store_true",
+        help="List available subcommands and exit.",
+    )
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Run every registered measurement in sequence (excludes passthroughs).",
+    )
+    parser.add_argument(
+        "--jobs",
+        type=int,
+        default=1,
+        metavar="N",
+        help=(
+            "With --all: run up to N measurements concurrently as subprocesses, "
+            "preserving output order. Default 1 (serial, in-process)."
+        ),
+    )
+    parser.add_argument(
+        "--data",
+        type=Path,
+        default=_COMBINED_DATA,
+        help=(
+            "Path to combined_corpus_data.json; used by data-driven measurements. "
+            "Default: %(default)s."
+        ),
+    )
+    parser.add_argument(
+        "--corpus-root",
+        type=Path,
+        default=_CORPUS_ROOT,
+        help=(
+            "Directory holding the swept corpus; used by lenient-text-fields. "
+            "Default: %(default)s."
+        ),
+    )
+    parser.add_argument(
+        "name",
+        nargs="?",
+        choices=tuple(_MEASUREMENTS) + tuple(_PASSTHROUGH),
+        help=(
+            "The subcommand to run (omit with --list / --all). "
+            "Args after a passthrough subcommand are forwarded to it."
+        ),
+    )
+    return parser
+
+
+def main(argv: list[str]) -> int:
+    parser = _build_parser()
+    args, extra = parser.parse_known_args(argv)
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+
+    if args.list:
+        print("Measurements:")
+        for name in _MEASUREMENTS:
+            print(f"  {name}")
+        print("Passthrough subcommands:")
+        for name in _PASSTHROUGH:
+            print(f"  {name}")
+        return 0
+
+    if args.all:
+        if extra:
+            logger.error("unexpected positional args with --all: %r", extra)
+            return 2
+        if args.jobs > 1:
+            return _run_all_parallel(args)
+        for name in _MEASUREMENTS:
+            _MEASUREMENTS[name](args)
+        return 0
+
+    if args.name is None:
+        parser.print_help()
+        return 2
+
+    if args.name in _MEASUREMENTS:
+        if extra:
+            logger.error("unexpected positional args: %r", extra)
+            return 2
+        _MEASUREMENTS[args.name](args)
+        return 0
+
+    return _PASSTHROUGH[args.name](args, extra)
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

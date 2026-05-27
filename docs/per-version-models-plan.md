@@ -315,8 +315,9 @@ clone). Committed under `models/` afterward: only `__init__.py` and `registry.py
   exposes their common attribute subset until a caller narrows by version. This
   is the precise type the converter wants.
 - **`newest_valid_profile` is a linear scan** — assumption-free. The corpus
-  sweep confirmed validity is *not* contiguous (~4% of real tools have gaps),
-  so a binary search would be wrong; the newest-first scan is correct regardless.
+  sweep confirmed validity is *not* contiguous (2.58% of real tools have gaps
+  in the 2026-05-27 combined sweep; see `docs/decisions.md` §10.3), so a
+  binary search would be wrong; the newest-first scan is correct regardless.
 - **Footprint** — ~28 × ~300 KB ≈ 8–9 MB of generated Python; repo unaffected
   (gitignored), wheel roughly triples.
 - Each xsdata run is its own subprocess (`python -m galaxy_tool_xml._codegen`) —

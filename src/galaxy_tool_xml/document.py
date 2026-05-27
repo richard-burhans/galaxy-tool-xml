@@ -52,12 +52,14 @@ def _patch_xsdata_primitive_node_leniency() -> None:
 
     The Galaxy XSD declares some elements (notably text-style fields) as
     primitive ``xs:string`` content, but real-world tools sometimes embed
-    HTML-like markup inside them (``<i>``, ``<b>``, anchors). Stock xsdata
-    raises ``XmlContextError`` on any such child, which would propagate out
-    of ``ToolDocument.model()``. Return ``SkipNode()`` instead so the
-    unexpected child and its descendants are silently skipped. The lxml
-    tree (the source of truth) still carries the markup verbatim; the
-    typed model just lacks it.
+    HTML-like markup inside them (``<i>``, ``<b>``, anchors). Empirically
+    rare — 10 of ~13,000 tools in the 2026-05-27 combined sweep, ~0.016%
+    of all text-style occurrences (see ``docs/decisions.md`` §10.9) — but
+    when it happens, stock xsdata raises ``XmlContextError`` on any such
+    child, which would propagate out of ``ToolDocument.model()``. Return
+    ``SkipNode()`` instead so the unexpected child and its descendants
+    are silently skipped. The lxml tree (the source of truth) still
+    carries the markup verbatim; the typed model just lacks it.
 
     Called at most once because ``_xml_parser`` is ``@cache``-d; repeated
     calls would re-bind ``PrimitiveNode.child`` with an equivalent closure.

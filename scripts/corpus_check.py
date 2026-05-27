@@ -452,9 +452,12 @@ def _expanded_attrs(
     from the expanded tree, so adding ``tool_id`` here costs no extra
     expansion. ``profile`` becomes ``_PROFILE_EXPANSION_FAILED`` when
     expansion fails; ``tool_id`` then falls back to the raw ``@id``
-    (typically a macro-token string like ``bcftools_@EXECUTABLE@``, more
-    informative than an empty string); ``expansion_failure_reason``
-    categorises the failure for the combined stats artifact.
+    literal (which may or may not contain a macro token like
+    ``bcftools_@EXECUTABLE@`` — empirically 0 of 17 expansion-failed
+    tools carried one in the 2026-05-27 combined sweep, but the
+    fallback handles either case; see ``docs/decisions.md`` §10.8).
+    ``expansion_failure_reason`` categorises the failure for the
+    combined stats artifact.
     """
     raw_id = document.root.get("id") or ""
     if not has_macros_flag:
@@ -1462,9 +1465,7 @@ def main(argv: list[str]) -> int:
         if args.source == "combined":
             failures_dir = _CORPUS_DATA_DIR / _FAILURE_DETAILS_SUBDIR
             _write_failure_details(rows=state.rows, output_dir=failures_dir)
-            logger.info(
-                "failure details -> %s/", failures_dir.relative_to(_REPO_ROOT)
-            )
+            logger.info("failure details -> %s/", failures_dir.relative_to(_REPO_ROOT))
     return 0
 
 

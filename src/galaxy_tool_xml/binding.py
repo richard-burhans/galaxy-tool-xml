@@ -295,8 +295,10 @@ def newest_valid_profile(target: Source | ToolDocument) -> str | None:
 
     The scan stops at the first (newest) profile that validates and assumes
     nothing about the older ones — a tool's valid profiles are often *not* a
-    contiguous range of releases. It is O(1) when the tool validates at the
-    latest profile, the common case.
+    contiguous range of releases (2.58% have gaps; see
+    ``docs/decisions.md`` §10.3). It is O(1) when the tool validates at the
+    latest profile, which is the case for 90.1% of unique tools in the
+    2026-05-27 combined sweep (§10.5).
     """
     # Prefer a filesystem path: validate_tool then resolves macros via
     # expand_from_path, which follows transitive <import>s. A ToolDocument may
