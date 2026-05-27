@@ -4,13 +4,13 @@
 
 | Repository | tool_id | Path | Version | Source |
 |---|---|---|---|---|
-| bgruening-galaxytools | `jamm` | `tools/jamm/jamm.xml` | `662e7be86a4a` | [view](https://github.com/bgruening/galaxytools/blob/662e7be86a4a1d44b779b7d234eccde528ed0226/tools/jamm/jamm.xml) |
-| jjkoehorst/sapp | `DGBK2RDF` | `gbk2rdf.xml` | `2201c5d61f16` | [view](https://toolshed.g2.bx.psu.edu/view/jjkoehorst/sapp) |
-| lain/ms_to_peakforest_it | `ms_to_peakforest_it` | `ms2pf_it.xml` | `7e3085fc60c1` | [view](https://toolshed.g2.bx.psu.edu/view/lain/ms_to_peakforest_it) |
-| marpiech/rnaseq_pro_workflow_tools | `countmatrixforedger` | `countmatrixforedger.xml` | `4cdaf6059e84` | [view](https://toolshed.g2.bx.psu.edu/view/marpiech/rnaseq_pro_workflow_tools) |
-| mingchen0919/rmarkdown_wgcna | `wgcna_construct_network` | `wgcna_construct_network.xml` | `05bcad4b5b4f` | [view](https://toolshed.g2.bx.psu.edu/view/mingchen0919/rmarkdown_wgcna) |
-| mingchen0919/rmarkdown_wgcna | `wgcna_eigengene_visualization` | `wgcna_eigengene_visualization.xml` | `05bcad4b5b4f` | [view](https://toolshed.g2.bx.psu.edu/view/mingchen0919/rmarkdown_wgcna) |
-| mingchen0919/rmarkdown_wgcna | `wgcna_preprocessing` | `wgcna_preprocessing.xml` | `05bcad4b5b4f` | [view](https://toolshed.g2.bx.psu.edu/view/mingchen0919/rmarkdown_wgcna) |
-| nikhil-joshi/sam2counts_edger | `sam2counts_edger` | `sam2counts_galaxy_edger.xml` | `a2ef5d59bd6e` | [view](https://toolshed.g2.bx.psu.edu/view/nikhil-joshi/sam2counts_edger) |
-| tools-iuc | `calculate_numeric_param` | `tools/calculate_numeric_param/calculate_numeric_param.xml` | `0dfd993e151c` | [view](https://github.com/galaxyproject/tools-iuc/blob/0dfd993e151cb880bbef237ba3d316b4dcf7ffea/tools/calculate_numeric_param/calculate_numeric_param.xml) |
-| tools-iuc | `compose_text_param` | `tools/compose_text_param/compose_text_param.xml` | `0dfd993e151c` | [view](https://github.com/galaxyproject/tools-iuc/blob/0dfd993e151cb880bbef237ba3d316b4dcf7ffea/tools/compose_text_param/compose_text_param.xml) |
+| bgruening-galaxytools | `jamm` | `tools/jamm/jamm.xml` | `662e7be86a4a` | <a href="https://github.com/bgruening/galaxytools/blob/662e7be86a4a1d44b779b7d234eccde528ed0226/tools/jamm/jamm.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| jjkoehorst/sapp | `DGBK2RDF` | `gbk2rdf.xml` | `2201c5d61f16` | <a href="https://toolshed.g2.bx.psu.edu/view/jjkoehorst/sapp" target="_blank" rel="noopener noreferrer">view</a> |
+| lain/ms_to_peakforest_it | `ms_to_peakforest_it` | `ms2pf_it.xml` | `7e3085fc60c1` | <a href="https://toolshed.g2.bx.psu.edu/view/lain/ms_to_peakforest_it" target="_blank" rel="noopener noreferrer">view</a> |
+| marpiech/rnaseq_pro_workflow_tools | `countmatrixforedger` | `countmatrixforedger.xml` | `4cdaf6059e84` | <a href="https://toolshed.g2.bx.psu.edu/view/marpiech/rnaseq_pro_workflow_tools" target="_blank" rel="noopener noreferrer">view</a> |
+| mingchen0919/rmarkdown_wgcna | `wgcna_construct_network` | `wgcna_construct_network.xml` | `05bcad4b5b4f` | <a href="https://toolshed.g2.bx.psu.edu/view/mingchen0919/rmarkdown_wgcna" target="_blank" rel="noopener noreferrer">view</a> |
+| mingchen0919/rmarkdown_wgcna | `wgcna_eigengene_visualization` | `wgcna_eigengene_visualization.xml` | `05bcad4b5b4f` | <a href="https://toolshed.g2.bx.psu.edu/view/mingchen0919/rmarkdown_wgcna" target="_blank" rel="noopener noreferrer">view</a> |
+| mingchen0919/rmarkdown_wgcna | `wgcna_preprocessing` | `wgcna_preprocessing.xml` | `05bcad4b5b4f` | <a href="https://toolshed.g2.bx.psu.edu/view/mingchen0919/rmarkdown_wgcna" target="_blank" rel="noopener noreferrer">view</a> |
+| nikhil-joshi/sam2counts_edger | `sam2counts_edger` | `sam2counts_galaxy_edger.xml` | `a2ef5d59bd6e` | <a href="https://toolshed.g2.bx.psu.edu/view/nikhil-joshi/sam2counts_edger" target="_blank" rel="noopener noreferrer">view</a> |
+| tools-iuc | `calculate_numeric_param` | `tools/calculate_numeric_param/calculate_numeric_param.xml` | `0dfd993e151c` | <a href="https://github.com/galaxyproject/tools-iuc/blob/0dfd993e151cb880bbef237ba3d316b4dcf7ffea/tools/calculate_numeric_param/calculate_numeric_param.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| tools-iuc | `compose_text_param` | `tools/compose_text_param/compose_text_param.xml` | `0dfd993e151c` | <a href="https://github.com/galaxyproject/tools-iuc/blob/0dfd993e151cb880bbef237ba3d316b4dcf7ffea/tools/compose_text_param/compose_text_param.xml" target="_blank" rel="noopener noreferrer">view</a> |

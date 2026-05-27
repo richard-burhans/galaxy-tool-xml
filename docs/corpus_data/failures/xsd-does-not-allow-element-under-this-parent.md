@@ -4,223 +4,223 @@
 
 | Repository | tool_id | Path | Version | Source |
 |---|---|---|---|---|
-| AAFC-BICoE-Galaxy | `mafft` | `wrappers/mafft.xml` | `d99c77e9a44f` | [view](https://github.com/AAFC-BICoE/Galaxy/blob/d99c77e9a44fa25b69c42ca6ad7ae8c402c6debc/wrappers/mafft.xml) |
-| AAFC-BICoE-Galaxy | `maker_wrap` | `wrappers/maker/maker_wrapper/maker.xml` | `d99c77e9a44f` | [view](https://github.com/AAFC-BICoE/Galaxy/blob/d99c77e9a44fa25b69c42ca6ad7ae8c402c6debc/wrappers/maker/maker_wrapper/maker.xml) |
-| adhawan/sigqc | `sigqc` | `sigQC.xml` | `5e65b8e6c20c` | [view](https://toolshed.g2.bx.psu.edu/view/adhawan/sigqc) |
-| bebatut/convert_extract_sequence_file | `convert_extract_sequence_file` | `convert_extract_sequence_file.xml` | `158642ce204f` | [view](https://toolshed.g2.bx.psu.edu/view/bebatut/convert_extract_sequence_file) |
-| bgruening-galaxytools | `quast` | `tools/quast/quast.xml` | `662e7be86a4a` | [view](https://github.com/bgruening/galaxytools/blob/662e7be86a4a1d44b779b7d234eccde528ed0226/tools/quast/quast.xml) |
-| bgruening-galaxytools | `terpen_finder` | `tools/staging_area/terpen_finder/terpen_finder.xml` | `662e7be86a4a` | [view](https://github.com/bgruening/galaxytools/blob/662e7be86a4a1d44b779b7d234eccde528ed0226/tools/staging_area/terpen_finder/terpen_finder.xml) |
-| bgruening/deeptools_plot_heatmap | `deeptools_plot_heatmap` | `plotHeatmap.xml` | `e4c7985d4585` | [view](https://toolshed.g2.bx.psu.edu/view/bgruening/deeptools_plot_heatmap) |
-| bgruening/interproscan5 | `interproscan` | `interproscan.xml` | `e32f2ea6a139` | [view](https://toolshed.g2.bx.psu.edu/view/bgruening/interproscan5) |
-| bornea/network_attributes | `network_attributes` | `NetworkAttributes.xml` | `40339590a08d` | [view](https://toolshed.g2.bx.psu.edu/view/bornea/network_attributes) |
-| brinkmanlab/base64 | `base64` | `base64.xml` | `69ece7949d76` | [view](https://toolshed.g2.bx.psu.edu/view/brinkmanlab/base64) |
-| cafletezbrant/kmersvm | `kmersvm_nullseq` | `kmersvm/nullseq.xml` | `fd740d515502` | [view](https://toolshed.g2.bx.psu.edu/view/cafletezbrant/kmersvm) |
-| cafletezbrant/kmersvm | `kmersvm_seqprofile` | `kmersvm/seqprofile.xml` | `fd740d515502` | [view](https://toolshed.g2.bx.psu.edu/view/cafletezbrant/kmersvm) |
-| cole_easson/assembly | `velveth` | `velvet-08256557922f/velveth.xml` | `5adf9db15edc` | [view](https://toolshed.g2.bx.psu.edu/view/cole_easson/assembly) |
-| cpt/cpt_compare_gbk | `edu.tamu.cpt.gbk.gbk_compare` | `cpt_gbk_compare/gbk_compare.xml` | `fc603e665d75` | [view](https://toolshed.g2.bx.psu.edu/view/cpt/cpt_compare_gbk) |
-| cpt/cpt_gbk_compare | `edu.tamu.cpt.gbk.gbk_compare` | `gbk_compare.xml` | `b0ab633db780` | [view](https://toolshed.g2.bx.psu.edu/view/cpt/cpt_gbk_compare) |
-| crique/phylogenetic_analysis | `phyml` | `phyml.xml` | `ac4a2f2b998b` | [view](https://toolshed.g2.bx.psu.edu/view/crique/phylogenetic_analysis) |
-| curtish/bwa_tools_mini | `bwa_color_wrapper` | `bwa_color_wrapper.xml` | `11eda1d95d84` | [view](https://toolshed.g2.bx.psu.edu/view/curtish/bwa_tools_mini) |
-| damion/ffp_phylogeny | `ffp_phylogeny` | `ffp_phylogeny.xml` | `79a4a86981d3` | [view](https://toolshed.g2.bx.psu.edu/view/damion/ffp_phylogeny) |
-| davidmurphy/codonlogo | `codonlogo` | `Codonlogo.xml` | `981eb8c3a756` | [view](https://toolshed.g2.bx.psu.edu/view/davidmurphy/codonlogo) |
-| davidvanzessen/argalaxy_tools | `complete_immunerepertoire_igg` | `complete_immunerepertoire.xml` | `f38a058e1a74` | [view](https://toolshed.g2.bx.psu.edu/view/davidvanzessen/argalaxy_tools) |
-| devteam/bwa_wrappers | `bwa_color_wrapper` | `bwa_color_wrapper.xml` | `b4427dbb6ced` | [view](https://toolshed.g2.bx.psu.edu/view/devteam/bwa_wrappers) |
-| devteam/gi2taxonomy | `Fetch Taxonomic Ranks` | `gi2taxonomy.xml` | `7b1b03c4465d` | [view](https://toolshed.g2.bx.psu.edu/view/devteam/gi2taxonomy) |
-| devteam/t2ps | `Draw_phylogram` | `t2ps_wrapper.xml` | `4d9910e996f7` | [view](https://toolshed.g2.bx.psu.edu/view/devteam/t2ps) |
-| edward-kirton/blast | `dustmasker` | `blast/dustmasker.xml` | `f3ac34855f5e` | [view](https://toolshed.g2.bx.psu.edu/view/edward-kirton/blast) |
-| enis/interactive_tool_rstudio_bioconductor | `interactive_tool_rstudio_bioconductor` | `interactive_tool_rstudio_bioconductor.xml` | `bc496c2564a4` | [view](https://toolshed.g2.bx.psu.edu/view/enis/interactive_tool_rstudio_bioconductor) |
-| epigenome/history_summary | `history_summary` | `history_summary.xml` | `11b4dfe32bc3` | [view](https://toolshed.g2.bx.psu.edu/view/epigenome/history_summary) |
-| fangly/copyrighter | `copyrighter` | `copyrighter.xml` | `658ad8b92341` | [view](https://toolshed.g2.bx.psu.edu/view/fangly/copyrighter) |
-| fangly/grinder | `grinder` | `grinder.xml` | `fa1fa683bcf1` | [view](https://toolshed.g2.bx.psu.edu/view/fangly/grinder) |
-| fjlobocab/protein_mosaic_q | `protein_mosaic_q` | `protein_mosaic_q.xml` | `c9de311a8aeb` | [view](https://toolshed.g2.bx.psu.edu/view/fjlobocab/protein_mosaic_q) |
-| fls-galaxy-tools | `ceas` | `tools/ceas/ceas_wrapper.xml` | `e68bd3c872c5` | [view](https://github.com/fls-bioinformatics-core/galaxy-tools/blob/e68bd3c872c5c51bffeba865b27465e2a80a3318/tools/ceas/ceas_wrapper.xml) |
-| galaxy-australia/purge_haplotigs | `purge_haplotigs_hist` | `purge_haplotigs_hist.xml` | `af9c15ba501f` | [view](https://toolshed.g2.bx.psu.edu/view/galaxy-australia/purge_haplotigs) |
-| galaxy-australia/purge_haplotigs | `purge_haplotigs_purge` | `purge_haplotigs_purge.xml` | `af9c15ba501f` | [view](https://toolshed.g2.bx.psu.edu/view/galaxy-australia/purge_haplotigs) |
-| galaxy-csg | `icqsol_scale_shape` | `tools/icqsol_scale_shape/icqsol_scale_shape.xml` | `f9ccdff76394` | [view](https://github.com/gregvonkuster/galaxy-csg/blob/f9ccdff76394292540207bf0880c766098c5bcdd/tools/icqsol_scale_shape/icqsol_scale_shape.xml) |
-| gdroc/rave | `rave` | `rave.xml` | `dabf0a44251a` | [view](https://toolshed.g2.bx.psu.edu/view/gdroc/rave) |
-| geert-vandeweyer/vcf_to_variantdb | `VCF_to_DB_rev` | `VCF_to_VariantDB.xml` | `fb815517e918` | [view](https://toolshed.g2.bx.psu.edu/view/geert-vandeweyer/vcf_to_variantdb) |
-| george-weingart/lefse | `LEfSe_for` | `home/ubuntu/lefse_to_export/format_input.xml` | `a31c10fe09c8` | [view](https://toolshed.g2.bx.psu.edu/view/george-weingart/lefse) |
-| george-weingart/lefse | `LEfSe_cla` | `home/ubuntu/lefse_to_export/plot_cladogram.xml` | `a31c10fe09c8` | [view](https://toolshed.g2.bx.psu.edu/view/george-weingart/lefse) |
-| george-weingart/lefse | `LEfSe_fea` | `home/ubuntu/lefse_to_export/plot_features.xml` | `a31c10fe09c8` | [view](https://toolshed.g2.bx.psu.edu/view/george-weingart/lefse) |
-| george-weingart/lefse | `LEfSe_res` | `home/ubuntu/lefse_to_export/plot_res.xml` | `a31c10fe09c8` | [view](https://toolshed.g2.bx.psu.edu/view/george-weingart/lefse) |
-| george-weingart/lefse | `LEfSe_sfe` | `home/ubuntu/lefse_to_export/plot_single_feature.xml` | `a31c10fe09c8` | [view](https://toolshed.g2.bx.psu.edu/view/george-weingart/lefse) |
-| george-weingart/lefse | `LEfSe_run` | `home/ubuntu/lefse_to_export/run_lefse.xml` | `a31c10fe09c8` | [view](https://toolshed.g2.bx.psu.edu/view/george-weingart/lefse) |
-| george-weingart/maaslin | `maaslin_run` | `maaslin.xml` | `e9677425c6c3` | [view](https://toolshed.g2.bx.psu.edu/view/george-weingart/maaslin) |
-| george-weingart/metaphlan | `metaphlan` | `metaphlan.xml` | `90de8f4531b9` | [view](https://toolshed.g2.bx.psu.edu/view/george-weingart/metaphlan) |
-| gkanogiannis/fastreer | `fastreer_fasta2dist` | `tools/fasta2dist/fastreer_fasta2dist.xml` | `e5cccac6a021` | [view](https://toolshed.g2.bx.psu.edu/view/gkanogiannis/fastreer) |
-| gkumar09/trinityctatfusion | `discasm` | `trinityctatfusion/discasm.xml` | `887986b43271` | [view](https://toolshed.g2.bx.psu.edu/view/gkumar09/trinityctatfusion) |
-| gkumar09/trinityctatfusion | `fusion_annotator` | `trinityctatfusion/fusion_annotator.xml` | `887986b43271` | [view](https://toolshed.g2.bx.psu.edu/view/gkumar09/trinityctatfusion) |
-| gkumar09/trinityctatfusion | `fusion-inspector-new` | `trinityctatfusion/fusion_inspector_new.xml` | `887986b43271` | [view](https://toolshed.g2.bx.psu.edu/view/gkumar09/trinityctatfusion) |
-| gkumar09/trinityctatfusion | `gmap_fusion` | `trinityctatfusion/gmap_fusion.xml` | `887986b43271` | [view](https://toolshed.g2.bx.psu.edu/view/gkumar09/trinityctatfusion) |
-| gkumar09/trinityctatfusion | `star-fusion-new` | `trinityctatfusion/star_fusion_new.xml` | `887986b43271` | [view](https://toolshed.g2.bx.psu.edu/view/gkumar09/trinityctatfusion) |
-| gkumar09/trinityrnaseq_protocol | `trinityrnaseq` | `trinityrnaseq_protocol/trinityrnaseq.xml` | `fac55e1121ee` | [view](https://toolshed.g2.bx.psu.edu/view/gkumar09/trinityrnaseq_protocol) |
-| gregory-minevich/bcftools_view | `bcftools_view` | `bcftools_view.xml` | `6572c40a8505` | [view](https://toolshed.g2.bx.psu.edu/view/gregory-minevich/bcftools_view) |
-| gregory-minevich/check_snpeff_candidates | `check_snpeff_candidates` | `checkSnpEffCandidates.xml` | `f20585ccbf05` | [view](https://toolshed.g2.bx.psu.edu/view/gregory-minevich/check_snpeff_candidates) |
-| guerler/charts | `charts` | `charts.xml` | `e67f691f08e4` | [view](https://toolshed.g2.bx.psu.edu/view/guerler/charts) |
-| henok_yoseph/allele_frequency_calculator | `allele_frequency_calculator` | `allele_frequency_calculator.xml` | `4b6b21a5f88a` | [view](https://toolshed.g2.bx.psu.edu/view/henok_yoseph/allele_frequency_calculator) |
-| iarc/mutspec | `mutSpeccompare` | `mutspecCompare.xml` | `eda59b985b1c` | [view](https://toolshed.g2.bx.psu.edu/view/iarc/mutspec) |
-| imgteam/parse_image_metadata | `param_image_metadata` | `parse_image_metadata.xml` | `96771bf8ed2f` | [view](https://toolshed.g2.bx.psu.edu/view/imgteam/parse_image_metadata) |
-| iracooke/make_protein_decoys | `make_decoy` | `make_decoy.xml` | `bd4844c664f2` | [view](https://toolshed.g2.bx.psu.edu/view/iracooke/make_protein_decoys) |
-| iracooke/mascot | `proteomics_search_mascot_1` | `mascot.xml` | `b3427b77073e` | [view](https://toolshed.g2.bx.psu.edu/view/iracooke/mascot) |
-| iracooke/mascot | `mascot_to_pepxml_1` | `mascot_to_pepxml.xml` | `b3427b77073e` | [view](https://toolshed.g2.bx.psu.edu/view/iracooke/mascot) |
-| iracooke/msgfplus | `proteomics_search_msgfplus_1` | `msgfplus_search.xml` | `f46cca39ea64` | [view](https://toolshed.g2.bx.psu.edu/view/iracooke/msgfplus) |
-| iracooke/omssa | `proteomics_search_omssa_1` | `omssa.xml` | `4294476e3f83` | [view](https://toolshed.g2.bx.psu.edu/view/iracooke/omssa) |
-| iracooke/protk_proteogenomics | `gff3_to_fasta` | `gff3_to_fasta.xml` | `86fd1757f102` | [view](https://toolshed.g2.bx.psu.edu/view/iracooke/protk_proteogenomics) |
-| iracooke/protk_proteogenomics | `mzid_to_protxml` | `mzid_to_protxml.xml` | `86fd1757f102` | [view](https://toolshed.g2.bx.psu.edu/view/iracooke/protk_proteogenomics) |
-| iracooke/protk_proteogenomics | `protxml_to_gff` | `protxml_to_gff.xml` | `86fd1757f102` | [view](https://toolshed.g2.bx.psu.edu/view/iracooke/protk_proteogenomics) |
-| iracooke/sixframe_translate | `sixframe_translate` | `sixframe_translate.xml` | `e20c4df2bc28` | [view](https://toolshed.g2.bx.psu.edu/view/iracooke/sixframe_translate) |
-| iracooke/tpp_prophets | `proteomics_search_interprophet_1` | `interprophet.xml` | `868e75fc0f70` | [view](https://toolshed.g2.bx.psu.edu/view/iracooke/tpp_prophets) |
-| iracooke/tpp_prophets | `proteomics_search_peptide_prophet_1` | `peptide_prophet.xml` | `868e75fc0f70` | [view](https://toolshed.g2.bx.psu.edu/view/iracooke/tpp_prophets) |
-| iracooke/tpp_prophets | `pepxml_to_table_1` | `pepxml_to_table.xml` | `868e75fc0f70` | [view](https://toolshed.g2.bx.psu.edu/view/iracooke/tpp_prophets) |
-| iracooke/tpp_prophets | `proteomics_search_protein_prophet_1` | `protein_prophet.xml` | `868e75fc0f70` | [view](https://toolshed.g2.bx.psu.edu/view/iracooke/tpp_prophets) |
-| iracooke/tpp_prophets | `protxml_to_table_1` | `protxml_to_table.xml` | `868e75fc0f70` | [view](https://toolshed.g2.bx.psu.edu/view/iracooke/tpp_prophets) |
-| iracooke/xtandem | `proteomics_search_tandem_1` | `tandem.xml` | `bbef168551fe` | [view](https://toolshed.g2.bx.psu.edu/view/iracooke/xtandem) |
-| iracooke/xtandem | `tandem_to_pepxml_1` | `tandem_to_pepxml.xml` | `bbef168551fe` | [view](https://toolshed.g2.bx.psu.edu/view/iracooke/xtandem) |
-| iuc/data_manager_metaphlan2_database_downloader | `data_manager_metaphlan2_download` | `data_manager/data_manager_metaphlan2_download.xml` | `83f07f40b200` | [view](https://toolshed.g2.bx.psu.edu/view/iuc/data_manager_metaphlan2_database_downloader) |
-| jackcurragh/ribogalaxy_get_chrom_sizes | `get_chrom_sizes` | `get_chrom_sizes/get_chrom_sizes.xml` | `9ed20799253d` | [view](https://toolshed.g2.bx.psu.edu/view/jackcurragh/ribogalaxy_get_chrom_sizes) |
-| jjohnson/fastq_mcf | `fastq_mcf` | `fastq-mcf.xml` | `b61f1466ce8f` | [view](https://toolshed.g2.bx.psu.edu/view/jjohnson/fastq_mcf) |
-| jjohnson/netmhc | `netmhc` | `netmhc.xml` | `bb25a4e5f211` | [view](https://toolshed.g2.bx.psu.edu/view/jjohnson/netmhc) |
-| lmansi/kmetashot | `kmetashot_pipeline` | `tools/kmetashot_pipeline.xml` | `50024f0c2536` | [view](https://toolshed.g2.bx.psu.edu/view/lmansi/kmetashot) |
-| luis/ball | `AddMissingAtoms` | `galaxy_stubs/AddMissingAtoms.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `AntitargetRescorer` | `galaxy_stubs/AntitargetRescorer.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `AutoModel` | `galaxy_stubs/AutoModel.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `BindingDBCleaner` | `galaxy_stubs/BindingDBCleaner.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `CalculateBindingFreeEnergy` | `galaxy_stubs/CalculateBindingFreeEnergy.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `CalculateEnergy` | `galaxy_stubs/CalculateEnergy.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `CalculateSolvationFreeEnergy` | `galaxy_stubs/CalculateSolvationFreeEnergy.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `CombiLibGenerator` | `galaxy_stubs/CombiLibGenerator.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `Converter` | `galaxy_stubs/Converter.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `CrystalGenerator` | `galaxy_stubs/CrystalGenerator.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `DockResultMerger` | `galaxy_stubs/DockResultMerger.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `EvenSplit` | `galaxy_stubs/EvenSplit.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `ExtractClustersFromWardTree` | `galaxy_stubs/ExtractClustersFromWardTree.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `ExtractProteinSequence` | `galaxy_stubs/ExtractProteinSequence.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `FeatureSelector` | `galaxy_stubs/FeatureSelector.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `FingerprintSimilarityClustering` | `galaxy_stubs/FingerprintSimilarityClustering.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `FingerprintSimilaritySearch` | `galaxy_stubs/FingerprintSimilaritySearch.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `InputPartitioner` | `galaxy_stubs/InputPartitioner.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `InputReader` | `galaxy_stubs/InputReader.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `InteractionConstraintDefiner` | `galaxy_stubs/InteractionConstraintDefiner.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `LigCheck` | `galaxy_stubs/LigCheck.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `Ligand3DGenerator` | `galaxy_stubs/Ligand3DGenerator.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `LigandFileSplitter` | `galaxy_stubs/LigandFileSplitter.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `ModelCreator` | `galaxy_stubs/ModelCreator.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `MolCombine` | `galaxy_stubs/MolCombine.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `MolDepict` | `galaxy_stubs/MolDepict.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `MolFilter` | `galaxy_stubs/MolFilter.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `MolPredictor` | `galaxy_stubs/MolPredictor.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `PDBCutter` | `galaxy_stubs/PDBCutter.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `PDBDownload` | `galaxy_stubs/PDBDownload.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `PDBRMSDCalculator` | `galaxy_stubs/PDBRMSDCalculator.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `PartialChargesCopy` | `galaxy_stubs/PartialChargesCopy.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `PeptideBuilder` | `galaxy_stubs/PeptideBuilder.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `PocketDetector` | `galaxy_stubs/PocketDetector.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `Predictor` | `galaxy_stubs/Predictor.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `PropertyModifier` | `galaxy_stubs/PropertyModifier.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `PropertyPlotter` | `galaxy_stubs/PropertyPlotter.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `ProteinCheck` | `galaxy_stubs/ProteinCheck.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `ProteinProtonator` | `galaxy_stubs/ProteinProtonator.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `RMSDCalculator` | `galaxy_stubs/RMSDCalculator.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `RemoveWater` | `galaxy_stubs/RemoveWater.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `ResidueChecker` | `galaxy_stubs/ResidueChecker.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `ScoreAnalyzer` | `galaxy_stubs/ScoreAnalyzer.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `SeperateMolecules` | `galaxy_stubs/SeparateMolecules.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `SideChainGridBuilder` | `galaxy_stubs/SideChainGridBuilder.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `SimilarityAnalyzer` | `galaxy_stubs/SimilarityAnalyzer.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `SpatialConstraintDefiner` | `galaxy_stubs/SpatialConstraintDefiner.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `Trajectory2RigidTransformation` | `galaxy_stubs/Trajectory2RigidTransformation.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| luis/ball | `Validator` | `galaxy_stubs/Validator.xml` | `605370bc1def` | [view](https://toolshed.g2.bx.psu.edu/view/luis/ball) |
-| lynngroup/testing5 | `id_gtf2fasta` | `testing5/gtf2fasta.xml` | `6fc5e177b396` | [view](https://toolshed.g2.bx.psu.edu/view/lynngroup/testing5) |
-| maarten.schermer/gemma_vetgalaxy | `vetgalaxy_gemma` | `vetgalaxy_gemma.xml` | `6330436f9eb1` | [view](https://toolshed.g2.bx.psu.edu/view/maarten.schermer/gemma_vetgalaxy) |
-| matteoc/agame_custom_tools | `ends_annot` | `annotate_ends/annotate_ends.xml` | `68a3648c7d91` | [view](https://toolshed.g2.bx.psu.edu/view/matteoc/agame_custom_tools) |
-| matteoc/agame_custom_tools | `trimmer` | `mytrimmer/trimPE.xml` | `68a3648c7d91` | [view](https://toolshed.g2.bx.psu.edu/view/matteoc/agame_custom_tools) |
-| matteoc/agame_custom_tools | `pfam_Filter` | `pfam_search/pfam_filter.xml` | `68a3648c7d91` | [view](https://toolshed.g2.bx.psu.edu/view/matteoc/agame_custom_tools) |
-| mkh/ips5 | `fastabox` | `interproscan5/fastabox.xml` | `1d6b3be059c8` | [view](https://toolshed.g2.bx.psu.edu/view/mkh/ips5) |
-| mkh/ips5 | `ips5` | `interproscan5/ips5.xml` | `1d6b3be059c8` | [view](https://toolshed.g2.bx.psu.edu/view/mkh/ips5) |
-| mkh/ips5 | `ipsfaux` | `interproscan5/ipsfaux.xml` | `1d6b3be059c8` | [view](https://toolshed.g2.bx.psu.edu/view/mkh/ips5) |
-| mkh/play | `interproscan` | `interproscan5/interproscan.xml` | `f41c8f299270` | [view](https://toolshed.g2.bx.psu.edu/view/mkh/play) |
-| nanette/nanette_test | `script_path` | `test_script_path.xml` | `900854ec76e6` | [view](https://toolshed.g2.bx.psu.edu/view/nanette/nanette_test) |
-| nilesh/bcftools | `BCF Tools Cat` | `bcftools_cat.xml` | `14567aa2be12` | [view](https://toolshed.g2.bx.psu.edu/view/nilesh/bcftools) |
-| pieterlukasse/prims_metabolomics2 | `lookup_library` | `GCMS/library_lookup.xml` | `9f03c8587d6b` | [view](https://toolshed.g2.bx.psu.edu/view/pieterlukasse/prims_metabolomics2) |
-| pmac/iterativepca | `pca_pipeline` | `pca_pipeline_def.xml` | `64e75e21466e` | [view](https://toolshed.g2.bx.psu.edu/view/pmac/iterativepca) |
-| proteore/proteore_expression_levels_by_tissue | `sel_ann_hpa` | `get_expression_profiles.xml` | `2173192d4824` | [view](https://toolshed.g2.bx.psu.edu/view/proteore/proteore_expression_levels_by_tissue) |
-| rnateam/data_manager_sortmerna_database_downloader | `data_manager_sortmerna_download` | `data_manager/data_manager_sortmerna_download.xml` | `7d2252852f96` | [view](https://toolshed.g2.bx.psu.edu/view/rnateam/data_manager_sortmerna_database_downloader) |
-| rnateam/vienna_rna | `rna2dfold` | `rna2dfold.xml` | `04c56f5b0907` | [view](https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna) |
-| rnateam/vienna_rna | `rnaaliduplex` | `rnaaliduplex.xml` | `04c56f5b0907` | [view](https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna) |
-| rnateam/vienna_rna | `rnaalifold` | `rnaalifold.xml` | `04c56f5b0907` | [view](https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna) |
-| rnateam/vienna_rna | `rnacofold` | `rnacofold.xml` | `04c56f5b0907` | [view](https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna) |
-| rnateam/vienna_rna | `rnadistance` | `rnadistance.xml` | `04c56f5b0907` | [view](https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna) |
-| rnateam/vienna_rna | `rnaduplex` | `rnaduplex.xml` | `04c56f5b0907` | [view](https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna) |
-| rnateam/vienna_rna | `rnaeval` | `rnaeval.xml` | `04c56f5b0907` | [view](https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna) |
-| rnateam/vienna_rna | `rnaheat` | `rnaheat.xml` | `04c56f5b0907` | [view](https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna) |
-| rnateam/vienna_rna | `rnainverse` | `rnainverse.xml` | `04c56f5b0907` | [view](https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna) |
-| rnateam/vienna_rna | `rnalalifold` | `rnalalifold.xml` | `04c56f5b0907` | [view](https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna) |
-| rnateam/vienna_rna | `rnalfold` | `rnalfold.xml` | `04c56f5b0907` | [view](https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna) |
-| rnateam/vienna_rna | `rnapaln` | `rnapaln.xml` | `04c56f5b0907` | [view](https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna) |
-| rnateam/vienna_rna | `rnapdist` | `rnapdist.xml` | `04c56f5b0907` | [view](https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna) |
-| rnateam/vienna_rna | `rnapkplex` | `rnapkplex.xml` | `04c56f5b0907` | [view](https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna) |
-| rnateam/vienna_rna | `rnaplex` | `rnaplex.xml` | `04c56f5b0907` | [view](https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna) |
-| rnateam/vienna_rna | `rnaplfold` | `rnaplfold.xml` | `04c56f5b0907` | [view](https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna) |
-| rnateam/vienna_rna | `rnaplot` | `rnaplot.xml` | `04c56f5b0907` | [view](https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna) |
-| rnateam/vienna_rna | `rnasnoop` | `rnasnoop.xml` | `04c56f5b0907` | [view](https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna) |
-| rnateam/vienna_rna | `rnasubopt` | `rnasubopt.xml` | `04c56f5b0907` | [view](https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna) |
-| rnateam/vienna_rna | `rnaup` | `rnaup.xml` | `04c56f5b0907` | [view](https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna) |
-| s-kaufmann/synteny_mapper | `SyntenyMapper1` | `synteny-mapper.xml` | `1fdfbe87a959` | [view](https://toolshed.g2.bx.psu.edu/view/s-kaufmann/synteny_mapper) |
-| saskia-hiltemann/annovar | `AnnovarShed` | `tools/annovar/annovar.xml` | `f7ff063c738e` | [view](https://toolshed.g2.bx.psu.edu/view/saskia-hiltemann/annovar) |
-| si-datascience/genome_tools | `interproscan` | `interproscan5-e32f2ea6a139/interproscan.xml` | `5a720d9e7071` | [view](https://toolshed.g2.bx.psu.edu/view/si-datascience/genome_tools) |
-| si-datascience/interps_test | `ips5` | `interproscan5/ips5.xml` | `0da2847fc108` | [view](https://toolshed.g2.bx.psu.edu/view/si-datascience/interps_test) |
-| swebb/pycrac | `pyCalculateChromosomeLengths` | `pyCRAC/pyCalculateChromosomeLengths.xml` | `7c9574213c0a` | [view](https://toolshed.g2.bx.psu.edu/view/swebb/pycrac) |
-| swebb/pycrac | `pyFastqJoiner` | `pyCRAC/pyFastqJoiner.xml` | `7c9574213c0a` | [view](https://toolshed.g2.bx.psu.edu/view/swebb/pycrac) |
-| takakoron/merge_snpsindels_files | `Merge_DNA_polymorphism_files_docker` | `Merge_SNPsInDels_files_docker.xml` | `5da57f040f2e` | [view](https://toolshed.g2.bx.psu.edu/view/takakoron/merge_snpsindels_files) |
-| testing/testing4 | `id_gtf2fasta` | `testing4/gtf2fasta.xml` | `3406cf04baac` | [view](https://toolshed.g2.bx.psu.edu/view/testing/testing4) |
-| timpalpant/java_genomics_toolkit | `matrix2png` | `galaxy-conf/matrix2png.xml` | `b43c420a6135` | [view](https://toolshed.g2.bx.psu.edu/view/timpalpant/java_genomics_toolkit) |
-| tools-artbio | `ont_fast5_api_multi_to_single_fast5` | `deprecated/ont_fast5_api/multi_to_single_fast5.xml` | `fcb46aafd088` | [view](https://github.com/ARTbio/tools-artbio/blob/fcb46aafd088f10c4a1c7f00a29dfd443d11c8c3/deprecated/ont_fast5_api/multi_to_single_fast5.xml) |
-| tools-artbio | `ont_fast5_api_single_to_multi_fast5` | `deprecated/ont_fast5_api/single_to_multi_fast5.xml` | `fcb46aafd088` | [view](https://github.com/ARTbio/tools-artbio/blob/fcb46aafd088f10c4a1c7f00a29dfd443d11c8c3/deprecated/ont_fast5_api/single_to_multi_fast5.xml) |
-| tools-devteam | `bwa_color_wrapper` | `deprecated/tools/bwa_wrappers/bwa_color_wrapper.xml` | `5d53a79839c6` | [view](https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/deprecated/tools/bwa_wrappers/bwa_color_wrapper.xml) |
-| tools-devteam | `Fetch Taxonomic Ranks` | `tool_collections/taxonomy/gi2taxonomy/gi2taxonomy.xml` | `5d53a79839c6` | [view](https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tool_collections/taxonomy/gi2taxonomy/gi2taxonomy.xml) |
-| tools-devteam | `Draw_phylogram` | `tool_collections/taxonomy/t2ps/t2ps_wrapper.xml` | `5d53a79839c6` | [view](https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tool_collections/taxonomy/t2ps/t2ps_wrapper.xml) |
-| tools-devteam | `t2t_report` | `tool_collections/taxonomy/t2t_report/t2t_report.xml` | `5d53a79839c6` | [view](https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tool_collections/taxonomy/t2t_report/t2t_report.xml) |
-| tools-devteam | `indelRates_3way` | `tools/getindelrates_3way/getIndelRates_3way.xml` | `5d53a79839c6` | [view](https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/getindelrates_3way/getIndelRates_3way.xml) |
-| tools-devteam | `getIndels_2way` | `tools/getindels_2way/getIndels_2way.xml` | `5d53a79839c6` | [view](https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/getindels_2way/getIndels_2way.xml) |
-| tools-devteam | `indels_3way` | `tools/indels_3way/getIndels_3way.xml` | `5d53a79839c6` | [view](https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/indels_3way/getIndels_3way.xml) |
-| tools-devteam | `LinearRegression1` | `tools/linear_regression/linear_regression.xml` | `5d53a79839c6` | [view](https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/linear_regression/linear_regression.xml) |
-| tools-devteam | `LogisticRegression` | `tools/logistic_regression_vif/logistic_regression_vif.xml` | `5d53a79839c6` | [view](https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/logistic_regression_vif/logistic_regression_vif.xml) |
-| tools-devteam | `cpgFilter` | `tools/maf_cpg_filter/maf_cpg_filter.xml` | `5d53a79839c6` | [view](https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/maf_cpg_filter/maf_cpg_filter.xml) |
-| tools-devteam | `microsatellite_birthdeath` | `tools/microsatellite_birthdeath/microsatellite_birthdeath.xml` | `5d53a79839c6` | [view](https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/microsatellite_birthdeath/microsatellite_birthdeath.xml) |
-| tools-devteam | `microsats_align1` | `tools/microsats_alignment_level/microsats_alignment_level.xml` | `5d53a79839c6` | [view](https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/microsats_alignment_level/microsats_alignment_level.xml) |
-| tools-devteam | `microsats_mutability1` | `tools/microsats_mutability/microsats_mutability.xml` | `5d53a79839c6` | [view](https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/microsats_mutability/microsats_mutability.xml) |
-| tools-devteam | `multispecies_orthologous_microsats` | `tools/multispecies_orthologous_microsats/multispecies_MicrosatDataGenerator_interrupted_GALAXY.xml` | `5d53a79839c6` | [view](https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/multispecies_orthologous_microsats/multispecies_MicrosatDataGenerator_interrupted_GALAXY.xml) |
-| tools-devteam | `partialRsq` | `tools/partialr_square/partialR_square.xml` | `5d53a79839c6` | [view](https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/partialr_square/partialR_square.xml) |
-| tools-devteam | `qualityFilter` | `tools/quality_filter/quality_filter.xml` | `5d53a79839c6` | [view](https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/quality_filter/quality_filter.xml) |
-| tools-devteam | `rcve1` | `tools/rcve/rcve.xml` | `5d53a79839c6` | [view](https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/rcve/rcve.xml) |
-| tools-devteam | `hist_high_quality_score` | `tools/short_reads_figure_high_quality_length/short_reads_figure_high_quality_length.xml` | `5d53a79839c6` | [view](https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/short_reads_figure_high_quality_length/short_reads_figure_high_quality_length.xml) |
-| tools-devteam | `quality_score_distribution` | `tools/short_reads_figure_score/short_reads_figure_score.xml` | `5d53a79839c6` | [view](https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/short_reads_figure_score/short_reads_figure_score.xml) |
-| tools-devteam | `trim_reads` | `tools/short_reads_trim_seq/short_reads_trim_seq.xml` | `5d53a79839c6` | [view](https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/short_reads_trim_seq/short_reads_trim_seq.xml) |
-| triasteran/ribogalaxy_get_chrom_sizes_upd | `get_chrom_sizes` | `get_chrom_sizes/get_chrom_sizes.xml` | `f2306942d61a` | [view](https://toolshed.g2.bx.psu.edu/view/triasteran/ribogalaxy_get_chrom_sizes_upd) |
-| trinity_ctat/ctat_clean_headers | `ctat_clean_headers` | `ctat_clean_headers.xml` | `67e77c325002` | [view](https://toolshed.g2.bx.psu.edu/view/trinity_ctat/ctat_clean_headers) |
-| trinity_ctat/ctat_discasm | `ctat_discasm` | `ctat_discasm.xml` | `a772e555b5a1` | [view](https://toolshed.g2.bx.psu.edu/view/trinity_ctat/ctat_discasm) |
-| trinity_ctat/ctat_fusion_inspector | `ctat_fusion_inspector` | `ctat_fusion_inspector.xml` | `1a7ec343001c` | [view](https://toolshed.g2.bx.psu.edu/view/trinity_ctat/ctat_fusion_inspector) |
-| trinity_ctat/ctat_gmap_fusion | `ctat_gmap_fusion` | `ctat_gmap_fusion.xml` | `966ea55e1aae` | [view](https://toolshed.g2.bx.psu.edu/view/trinity_ctat/ctat_gmap_fusion) |
-| ulfschaefer/phephenix | `vcfs2fasta` | `vcfs2fasta.xml` | `9c63ab34838d` | [view](https://toolshed.g2.bx.psu.edu/view/ulfschaefer/phephenix) |
-| victor/rsem | `live-rsem-1.1.17` | `rsem/rsem-1.1.17.xml` | `560aaa69b532` | [view](https://toolshed.g2.bx.psu.edu/view/victor/rsem) |
-| xuebing/kplogo | `kplogo` | `kplogo.xml` | `89aa9e0df5d4` | [view](https://toolshed.g2.bx.psu.edu/view/xuebing/kplogo) |
-| yusuf/add_missing_coverage | `hgvs_add_coverage` | `AddMissingCoverage.xml` | `a3129cb0af43` | [view](https://toolshed.g2.bx.psu.edu/view/yusuf/add_missing_coverage) |
-| yusuf/add_names_bed | `add_names_to_bed_1` | `AddNamesToBED.xml` | `5e699c743e37` | [view](https://toolshed.g2.bx.psu.edu/view/yusuf/add_names_bed) |
-| yusuf/annotate_hgvs | `hgvs_annotation_2` | `AnnotateVariants.xml` | `9977d1935a07` | [view](https://toolshed.g2.bx.psu.edu/view/yusuf/annotate_hgvs) |
-| yusuf/associate_phenotypes | `hgvs_assoc_phenos` | `AssociatePhenotypes.xml` | `6411ca16916e` | [view](https://toolshed.g2.bx.psu.edu/view/yusuf/associate_phenotypes) |
-| yusuf/combine_hgvs_annotations | `hgvs_combine_1` | `CombineHGVSAnnotations.xml` | `baf1543e8ae1` | [view](https://toolshed.g2.bx.psu.edu/view/yusuf/combine_hgvs_annotations) |
-| yusuf/concordance_report | `concordance_report_1` | `ConcordanceReport.xml` | `2d601bd04c93` | [view](https://toolshed.g2.bx.psu.edu/view/yusuf/concordance_report) |
-| yusuf/dedup_realign_bam | `dedup_realign_bam_1` | `DedupRealignBAM.xml` | `6b673ffd9e38` | [view](https://toolshed.g2.bx.psu.edu/view/yusuf/dedup_realign_bam) |
-| yusuf/depth_report | `depth_reports_1` | `DepthReports.xml` | `a0f4b5618eee` | [view](https://toolshed.g2.bx.psu.edu/view/yusuf/depth_report) |
-| yusuf/extend_bed_regions | `extend_bed_regions_1` | `ExtendBedRegions.xml` | `cb1c17dddc14` | [view](https://toolshed.g2.bx.psu.edu/view/yusuf/extend_bed_regions) |
-| yusuf/filter_bam_list | `filter_bam_by_list_1` | `FilterBAMByNamesList.xml` | `42af0b971c55` | [view](https://toolshed.g2.bx.psu.edu/view/yusuf/filter_bam_list) |
-| yusuf/filter_table_by_names | `filter_by_list_1` | `FilterTableByNamesList.xml` | `f92e6aff30b7` | [view](https://toolshed.g2.bx.psu.edu/view/yusuf/filter_table_by_names) |
-| yusuf/group_alt_variants | `hgvs_group_alt_variants` | `GroupAltTranscriptVariants.xml` | `7c94246126b0` | [view](https://toolshed.g2.bx.psu.edu/view/yusuf/group_alt_variants) |
-| yusuf/gvf_to_vcf | `gvf_to_vcf_1` | `GVF2VCF.xml` | `18d965813efc` | [view](https://toolshed.g2.bx.psu.edu/view/yusuf/gvf_to_vcf) |
-| yusuf/hgvs_vcf | `hgvs2vcf_1` | `HGVS2VCF.xml` | `138d81f259c8` | [view](https://toolshed.g2.bx.psu.edu/view/yusuf/hgvs_vcf) |
-| yusuf/microarray_report | `microarray_reports_1` | `MicroarrayReports.xml` | `882d119ede1f` | [view](https://toolshed.g2.bx.psu.edu/view/yusuf/microarray_report) |
-| yusuf/miseq_bam_variants | `call_miseq_vars` | `MiSeqBAMtoVariants.xml` | `1a23ea467feb` | [view](https://toolshed.g2.bx.psu.edu/view/yusuf/miseq_bam_variants) |
-| yusuf/miseq_fastq_bam | `generate_miseq_pe_bam` | `MiSeqFastQtoBAM.xml` | `8f4d4b4e8b04` | [view](https://toolshed.g2.bx.psu.edu/view/yusuf/miseq_fastq_bam) |
-| yusuf/poor_gene_coverage | `poor_gene_coverage` | `PoorGeneCoverage.xml` | `7cdd13ff182a` | [view](https://toolshed.g2.bx.psu.edu/view/yusuf/poor_gene_coverage) |
-| yusuf/snp_report | `snp_reports_1` | `SNPReports.xml` | `14e1cf728269` | [view](https://toolshed.g2.bx.psu.edu/view/yusuf/snp_report) |
-| yusuf/triage_rare_genotypes | `hgvs_combine_1` | `TriageRareGenotypes.xml` | `0d7a85ddac86` | [view](https://toolshed.g2.bx.psu.edu/view/yusuf/triage_rare_genotypes) |
+| AAFC-BICoE-Galaxy | `mafft` | `wrappers/mafft.xml` | `d99c77e9a44f` | <a href="https://github.com/AAFC-BICoE/Galaxy/blob/d99c77e9a44fa25b69c42ca6ad7ae8c402c6debc/wrappers/mafft.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| AAFC-BICoE-Galaxy | `maker_wrap` | `wrappers/maker/maker_wrapper/maker.xml` | `d99c77e9a44f` | <a href="https://github.com/AAFC-BICoE/Galaxy/blob/d99c77e9a44fa25b69c42ca6ad7ae8c402c6debc/wrappers/maker/maker_wrapper/maker.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| adhawan/sigqc | `sigqc` | `sigQC.xml` | `5e65b8e6c20c` | <a href="https://toolshed.g2.bx.psu.edu/view/adhawan/sigqc" target="_blank" rel="noopener noreferrer">view</a> |
+| bebatut/convert_extract_sequence_file | `convert_extract_sequence_file` | `convert_extract_sequence_file.xml` | `158642ce204f` | <a href="https://toolshed.g2.bx.psu.edu/view/bebatut/convert_extract_sequence_file" target="_blank" rel="noopener noreferrer">view</a> |
+| bgruening-galaxytools | `quast` | `tools/quast/quast.xml` | `662e7be86a4a` | <a href="https://github.com/bgruening/galaxytools/blob/662e7be86a4a1d44b779b7d234eccde528ed0226/tools/quast/quast.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| bgruening-galaxytools | `terpen_finder` | `tools/staging_area/terpen_finder/terpen_finder.xml` | `662e7be86a4a` | <a href="https://github.com/bgruening/galaxytools/blob/662e7be86a4a1d44b779b7d234eccde528ed0226/tools/staging_area/terpen_finder/terpen_finder.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| bgruening/deeptools_plot_heatmap | `deeptools_plot_heatmap` | `plotHeatmap.xml` | `e4c7985d4585` | <a href="https://toolshed.g2.bx.psu.edu/view/bgruening/deeptools_plot_heatmap" target="_blank" rel="noopener noreferrer">view</a> |
+| bgruening/interproscan5 | `interproscan` | `interproscan.xml` | `e32f2ea6a139` | <a href="https://toolshed.g2.bx.psu.edu/view/bgruening/interproscan5" target="_blank" rel="noopener noreferrer">view</a> |
+| bornea/network_attributes | `network_attributes` | `NetworkAttributes.xml` | `40339590a08d` | <a href="https://toolshed.g2.bx.psu.edu/view/bornea/network_attributes" target="_blank" rel="noopener noreferrer">view</a> |
+| brinkmanlab/base64 | `base64` | `base64.xml` | `69ece7949d76` | <a href="https://toolshed.g2.bx.psu.edu/view/brinkmanlab/base64" target="_blank" rel="noopener noreferrer">view</a> |
+| cafletezbrant/kmersvm | `kmersvm_nullseq` | `kmersvm/nullseq.xml` | `fd740d515502` | <a href="https://toolshed.g2.bx.psu.edu/view/cafletezbrant/kmersvm" target="_blank" rel="noopener noreferrer">view</a> |
+| cafletezbrant/kmersvm | `kmersvm_seqprofile` | `kmersvm/seqprofile.xml` | `fd740d515502` | <a href="https://toolshed.g2.bx.psu.edu/view/cafletezbrant/kmersvm" target="_blank" rel="noopener noreferrer">view</a> |
+| cole_easson/assembly | `velveth` | `velvet-08256557922f/velveth.xml` | `5adf9db15edc` | <a href="https://toolshed.g2.bx.psu.edu/view/cole_easson/assembly" target="_blank" rel="noopener noreferrer">view</a> |
+| cpt/cpt_compare_gbk | `edu.tamu.cpt.gbk.gbk_compare` | `cpt_gbk_compare/gbk_compare.xml` | `fc603e665d75` | <a href="https://toolshed.g2.bx.psu.edu/view/cpt/cpt_compare_gbk" target="_blank" rel="noopener noreferrer">view</a> |
+| cpt/cpt_gbk_compare | `edu.tamu.cpt.gbk.gbk_compare` | `gbk_compare.xml` | `b0ab633db780` | <a href="https://toolshed.g2.bx.psu.edu/view/cpt/cpt_gbk_compare" target="_blank" rel="noopener noreferrer">view</a> |
+| crique/phylogenetic_analysis | `phyml` | `phyml.xml` | `ac4a2f2b998b` | <a href="https://toolshed.g2.bx.psu.edu/view/crique/phylogenetic_analysis" target="_blank" rel="noopener noreferrer">view</a> |
+| curtish/bwa_tools_mini | `bwa_color_wrapper` | `bwa_color_wrapper.xml` | `11eda1d95d84` | <a href="https://toolshed.g2.bx.psu.edu/view/curtish/bwa_tools_mini" target="_blank" rel="noopener noreferrer">view</a> |
+| damion/ffp_phylogeny | `ffp_phylogeny` | `ffp_phylogeny.xml` | `79a4a86981d3` | <a href="https://toolshed.g2.bx.psu.edu/view/damion/ffp_phylogeny" target="_blank" rel="noopener noreferrer">view</a> |
+| davidmurphy/codonlogo | `codonlogo` | `Codonlogo.xml` | `981eb8c3a756` | <a href="https://toolshed.g2.bx.psu.edu/view/davidmurphy/codonlogo" target="_blank" rel="noopener noreferrer">view</a> |
+| davidvanzessen/argalaxy_tools | `complete_immunerepertoire_igg` | `complete_immunerepertoire.xml` | `f38a058e1a74` | <a href="https://toolshed.g2.bx.psu.edu/view/davidvanzessen/argalaxy_tools" target="_blank" rel="noopener noreferrer">view</a> |
+| devteam/bwa_wrappers | `bwa_color_wrapper` | `bwa_color_wrapper.xml` | `b4427dbb6ced` | <a href="https://toolshed.g2.bx.psu.edu/view/devteam/bwa_wrappers" target="_blank" rel="noopener noreferrer">view</a> |
+| devteam/gi2taxonomy | `Fetch Taxonomic Ranks` | `gi2taxonomy.xml` | `7b1b03c4465d` | <a href="https://toolshed.g2.bx.psu.edu/view/devteam/gi2taxonomy" target="_blank" rel="noopener noreferrer">view</a> |
+| devteam/t2ps | `Draw_phylogram` | `t2ps_wrapper.xml` | `4d9910e996f7` | <a href="https://toolshed.g2.bx.psu.edu/view/devteam/t2ps" target="_blank" rel="noopener noreferrer">view</a> |
+| edward-kirton/blast | `dustmasker` | `blast/dustmasker.xml` | `f3ac34855f5e` | <a href="https://toolshed.g2.bx.psu.edu/view/edward-kirton/blast" target="_blank" rel="noopener noreferrer">view</a> |
+| enis/interactive_tool_rstudio_bioconductor | `interactive_tool_rstudio_bioconductor` | `interactive_tool_rstudio_bioconductor.xml` | `bc496c2564a4` | <a href="https://toolshed.g2.bx.psu.edu/view/enis/interactive_tool_rstudio_bioconductor" target="_blank" rel="noopener noreferrer">view</a> |
+| epigenome/history_summary | `history_summary` | `history_summary.xml` | `11b4dfe32bc3` | <a href="https://toolshed.g2.bx.psu.edu/view/epigenome/history_summary" target="_blank" rel="noopener noreferrer">view</a> |
+| fangly/copyrighter | `copyrighter` | `copyrighter.xml` | `658ad8b92341` | <a href="https://toolshed.g2.bx.psu.edu/view/fangly/copyrighter" target="_blank" rel="noopener noreferrer">view</a> |
+| fangly/grinder | `grinder` | `grinder.xml` | `fa1fa683bcf1` | <a href="https://toolshed.g2.bx.psu.edu/view/fangly/grinder" target="_blank" rel="noopener noreferrer">view</a> |
+| fjlobocab/protein_mosaic_q | `protein_mosaic_q` | `protein_mosaic_q.xml` | `c9de311a8aeb` | <a href="https://toolshed.g2.bx.psu.edu/view/fjlobocab/protein_mosaic_q" target="_blank" rel="noopener noreferrer">view</a> |
+| fls-galaxy-tools | `ceas` | `tools/ceas/ceas_wrapper.xml` | `e68bd3c872c5` | <a href="https://github.com/fls-bioinformatics-core/galaxy-tools/blob/e68bd3c872c5c51bffeba865b27465e2a80a3318/tools/ceas/ceas_wrapper.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| galaxy-australia/purge_haplotigs | `purge_haplotigs_hist` | `purge_haplotigs_hist.xml` | `af9c15ba501f` | <a href="https://toolshed.g2.bx.psu.edu/view/galaxy-australia/purge_haplotigs" target="_blank" rel="noopener noreferrer">view</a> |
+| galaxy-australia/purge_haplotigs | `purge_haplotigs_purge` | `purge_haplotigs_purge.xml` | `af9c15ba501f` | <a href="https://toolshed.g2.bx.psu.edu/view/galaxy-australia/purge_haplotigs" target="_blank" rel="noopener noreferrer">view</a> |
+| galaxy-csg | `icqsol_scale_shape` | `tools/icqsol_scale_shape/icqsol_scale_shape.xml` | `f9ccdff76394` | <a href="https://github.com/gregvonkuster/galaxy-csg/blob/f9ccdff76394292540207bf0880c766098c5bcdd/tools/icqsol_scale_shape/icqsol_scale_shape.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| gdroc/rave | `rave` | `rave.xml` | `dabf0a44251a` | <a href="https://toolshed.g2.bx.psu.edu/view/gdroc/rave" target="_blank" rel="noopener noreferrer">view</a> |
+| geert-vandeweyer/vcf_to_variantdb | `VCF_to_DB_rev` | `VCF_to_VariantDB.xml` | `fb815517e918` | <a href="https://toolshed.g2.bx.psu.edu/view/geert-vandeweyer/vcf_to_variantdb" target="_blank" rel="noopener noreferrer">view</a> |
+| george-weingart/lefse | `LEfSe_for` | `home/ubuntu/lefse_to_export/format_input.xml` | `a31c10fe09c8` | <a href="https://toolshed.g2.bx.psu.edu/view/george-weingart/lefse" target="_blank" rel="noopener noreferrer">view</a> |
+| george-weingart/lefse | `LEfSe_cla` | `home/ubuntu/lefse_to_export/plot_cladogram.xml` | `a31c10fe09c8` | <a href="https://toolshed.g2.bx.psu.edu/view/george-weingart/lefse" target="_blank" rel="noopener noreferrer">view</a> |
+| george-weingart/lefse | `LEfSe_fea` | `home/ubuntu/lefse_to_export/plot_features.xml` | `a31c10fe09c8` | <a href="https://toolshed.g2.bx.psu.edu/view/george-weingart/lefse" target="_blank" rel="noopener noreferrer">view</a> |
+| george-weingart/lefse | `LEfSe_res` | `home/ubuntu/lefse_to_export/plot_res.xml` | `a31c10fe09c8` | <a href="https://toolshed.g2.bx.psu.edu/view/george-weingart/lefse" target="_blank" rel="noopener noreferrer">view</a> |
+| george-weingart/lefse | `LEfSe_sfe` | `home/ubuntu/lefse_to_export/plot_single_feature.xml` | `a31c10fe09c8` | <a href="https://toolshed.g2.bx.psu.edu/view/george-weingart/lefse" target="_blank" rel="noopener noreferrer">view</a> |
+| george-weingart/lefse | `LEfSe_run` | `home/ubuntu/lefse_to_export/run_lefse.xml` | `a31c10fe09c8` | <a href="https://toolshed.g2.bx.psu.edu/view/george-weingart/lefse" target="_blank" rel="noopener noreferrer">view</a> |
+| george-weingart/maaslin | `maaslin_run` | `maaslin.xml` | `e9677425c6c3` | <a href="https://toolshed.g2.bx.psu.edu/view/george-weingart/maaslin" target="_blank" rel="noopener noreferrer">view</a> |
+| george-weingart/metaphlan | `metaphlan` | `metaphlan.xml` | `90de8f4531b9` | <a href="https://toolshed.g2.bx.psu.edu/view/george-weingart/metaphlan" target="_blank" rel="noopener noreferrer">view</a> |
+| gkanogiannis/fastreer | `fastreer_fasta2dist` | `tools/fasta2dist/fastreer_fasta2dist.xml` | `e5cccac6a021` | <a href="https://toolshed.g2.bx.psu.edu/view/gkanogiannis/fastreer" target="_blank" rel="noopener noreferrer">view</a> |
+| gkumar09/trinityctatfusion | `discasm` | `trinityctatfusion/discasm.xml` | `887986b43271` | <a href="https://toolshed.g2.bx.psu.edu/view/gkumar09/trinityctatfusion" target="_blank" rel="noopener noreferrer">view</a> |
+| gkumar09/trinityctatfusion | `fusion_annotator` | `trinityctatfusion/fusion_annotator.xml` | `887986b43271` | <a href="https://toolshed.g2.bx.psu.edu/view/gkumar09/trinityctatfusion" target="_blank" rel="noopener noreferrer">view</a> |
+| gkumar09/trinityctatfusion | `fusion-inspector-new` | `trinityctatfusion/fusion_inspector_new.xml` | `887986b43271` | <a href="https://toolshed.g2.bx.psu.edu/view/gkumar09/trinityctatfusion" target="_blank" rel="noopener noreferrer">view</a> |
+| gkumar09/trinityctatfusion | `gmap_fusion` | `trinityctatfusion/gmap_fusion.xml` | `887986b43271` | <a href="https://toolshed.g2.bx.psu.edu/view/gkumar09/trinityctatfusion" target="_blank" rel="noopener noreferrer">view</a> |
+| gkumar09/trinityctatfusion | `star-fusion-new` | `trinityctatfusion/star_fusion_new.xml` | `887986b43271` | <a href="https://toolshed.g2.bx.psu.edu/view/gkumar09/trinityctatfusion" target="_blank" rel="noopener noreferrer">view</a> |
+| gkumar09/trinityrnaseq_protocol | `trinityrnaseq` | `trinityrnaseq_protocol/trinityrnaseq.xml` | `fac55e1121ee` | <a href="https://toolshed.g2.bx.psu.edu/view/gkumar09/trinityrnaseq_protocol" target="_blank" rel="noopener noreferrer">view</a> |
+| gregory-minevich/bcftools_view | `bcftools_view` | `bcftools_view.xml` | `6572c40a8505` | <a href="https://toolshed.g2.bx.psu.edu/view/gregory-minevich/bcftools_view" target="_blank" rel="noopener noreferrer">view</a> |
+| gregory-minevich/check_snpeff_candidates | `check_snpeff_candidates` | `checkSnpEffCandidates.xml` | `f20585ccbf05` | <a href="https://toolshed.g2.bx.psu.edu/view/gregory-minevich/check_snpeff_candidates" target="_blank" rel="noopener noreferrer">view</a> |
+| guerler/charts | `charts` | `charts.xml` | `e67f691f08e4` | <a href="https://toolshed.g2.bx.psu.edu/view/guerler/charts" target="_blank" rel="noopener noreferrer">view</a> |
+| henok_yoseph/allele_frequency_calculator | `allele_frequency_calculator` | `allele_frequency_calculator.xml` | `4b6b21a5f88a` | <a href="https://toolshed.g2.bx.psu.edu/view/henok_yoseph/allele_frequency_calculator" target="_blank" rel="noopener noreferrer">view</a> |
+| iarc/mutspec | `mutSpeccompare` | `mutspecCompare.xml` | `eda59b985b1c` | <a href="https://toolshed.g2.bx.psu.edu/view/iarc/mutspec" target="_blank" rel="noopener noreferrer">view</a> |
+| imgteam/parse_image_metadata | `param_image_metadata` | `parse_image_metadata.xml` | `96771bf8ed2f` | <a href="https://toolshed.g2.bx.psu.edu/view/imgteam/parse_image_metadata" target="_blank" rel="noopener noreferrer">view</a> |
+| iracooke/make_protein_decoys | `make_decoy` | `make_decoy.xml` | `bd4844c664f2` | <a href="https://toolshed.g2.bx.psu.edu/view/iracooke/make_protein_decoys" target="_blank" rel="noopener noreferrer">view</a> |
+| iracooke/mascot | `proteomics_search_mascot_1` | `mascot.xml` | `b3427b77073e` | <a href="https://toolshed.g2.bx.psu.edu/view/iracooke/mascot" target="_blank" rel="noopener noreferrer">view</a> |
+| iracooke/mascot | `mascot_to_pepxml_1` | `mascot_to_pepxml.xml` | `b3427b77073e` | <a href="https://toolshed.g2.bx.psu.edu/view/iracooke/mascot" target="_blank" rel="noopener noreferrer">view</a> |
+| iracooke/msgfplus | `proteomics_search_msgfplus_1` | `msgfplus_search.xml` | `f46cca39ea64` | <a href="https://toolshed.g2.bx.psu.edu/view/iracooke/msgfplus" target="_blank" rel="noopener noreferrer">view</a> |
+| iracooke/omssa | `proteomics_search_omssa_1` | `omssa.xml` | `4294476e3f83` | <a href="https://toolshed.g2.bx.psu.edu/view/iracooke/omssa" target="_blank" rel="noopener noreferrer">view</a> |
+| iracooke/protk_proteogenomics | `gff3_to_fasta` | `gff3_to_fasta.xml` | `86fd1757f102` | <a href="https://toolshed.g2.bx.psu.edu/view/iracooke/protk_proteogenomics" target="_blank" rel="noopener noreferrer">view</a> |
+| iracooke/protk_proteogenomics | `mzid_to_protxml` | `mzid_to_protxml.xml` | `86fd1757f102` | <a href="https://toolshed.g2.bx.psu.edu/view/iracooke/protk_proteogenomics" target="_blank" rel="noopener noreferrer">view</a> |
+| iracooke/protk_proteogenomics | `protxml_to_gff` | `protxml_to_gff.xml` | `86fd1757f102` | <a href="https://toolshed.g2.bx.psu.edu/view/iracooke/protk_proteogenomics" target="_blank" rel="noopener noreferrer">view</a> |
+| iracooke/sixframe_translate | `sixframe_translate` | `sixframe_translate.xml` | `e20c4df2bc28` | <a href="https://toolshed.g2.bx.psu.edu/view/iracooke/sixframe_translate" target="_blank" rel="noopener noreferrer">view</a> |
+| iracooke/tpp_prophets | `proteomics_search_interprophet_1` | `interprophet.xml` | `868e75fc0f70` | <a href="https://toolshed.g2.bx.psu.edu/view/iracooke/tpp_prophets" target="_blank" rel="noopener noreferrer">view</a> |
+| iracooke/tpp_prophets | `proteomics_search_peptide_prophet_1` | `peptide_prophet.xml` | `868e75fc0f70` | <a href="https://toolshed.g2.bx.psu.edu/view/iracooke/tpp_prophets" target="_blank" rel="noopener noreferrer">view</a> |
+| iracooke/tpp_prophets | `pepxml_to_table_1` | `pepxml_to_table.xml` | `868e75fc0f70` | <a href="https://toolshed.g2.bx.psu.edu/view/iracooke/tpp_prophets" target="_blank" rel="noopener noreferrer">view</a> |
+| iracooke/tpp_prophets | `proteomics_search_protein_prophet_1` | `protein_prophet.xml` | `868e75fc0f70` | <a href="https://toolshed.g2.bx.psu.edu/view/iracooke/tpp_prophets" target="_blank" rel="noopener noreferrer">view</a> |
+| iracooke/tpp_prophets | `protxml_to_table_1` | `protxml_to_table.xml` | `868e75fc0f70` | <a href="https://toolshed.g2.bx.psu.edu/view/iracooke/tpp_prophets" target="_blank" rel="noopener noreferrer">view</a> |
+| iracooke/xtandem | `proteomics_search_tandem_1` | `tandem.xml` | `bbef168551fe` | <a href="https://toolshed.g2.bx.psu.edu/view/iracooke/xtandem" target="_blank" rel="noopener noreferrer">view</a> |
+| iracooke/xtandem | `tandem_to_pepxml_1` | `tandem_to_pepxml.xml` | `bbef168551fe` | <a href="https://toolshed.g2.bx.psu.edu/view/iracooke/xtandem" target="_blank" rel="noopener noreferrer">view</a> |
+| iuc/data_manager_metaphlan2_database_downloader | `data_manager_metaphlan2_download` | `data_manager/data_manager_metaphlan2_download.xml` | `83f07f40b200` | <a href="https://toolshed.g2.bx.psu.edu/view/iuc/data_manager_metaphlan2_database_downloader" target="_blank" rel="noopener noreferrer">view</a> |
+| jackcurragh/ribogalaxy_get_chrom_sizes | `get_chrom_sizes` | `get_chrom_sizes/get_chrom_sizes.xml` | `9ed20799253d` | <a href="https://toolshed.g2.bx.psu.edu/view/jackcurragh/ribogalaxy_get_chrom_sizes" target="_blank" rel="noopener noreferrer">view</a> |
+| jjohnson/fastq_mcf | `fastq_mcf` | `fastq-mcf.xml` | `b61f1466ce8f` | <a href="https://toolshed.g2.bx.psu.edu/view/jjohnson/fastq_mcf" target="_blank" rel="noopener noreferrer">view</a> |
+| jjohnson/netmhc | `netmhc` | `netmhc.xml` | `bb25a4e5f211` | <a href="https://toolshed.g2.bx.psu.edu/view/jjohnson/netmhc" target="_blank" rel="noopener noreferrer">view</a> |
+| lmansi/kmetashot | `kmetashot_pipeline` | `tools/kmetashot_pipeline.xml` | `50024f0c2536` | <a href="https://toolshed.g2.bx.psu.edu/view/lmansi/kmetashot" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `AddMissingAtoms` | `galaxy_stubs/AddMissingAtoms.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `AntitargetRescorer` | `galaxy_stubs/AntitargetRescorer.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `AutoModel` | `galaxy_stubs/AutoModel.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `BindingDBCleaner` | `galaxy_stubs/BindingDBCleaner.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `CalculateBindingFreeEnergy` | `galaxy_stubs/CalculateBindingFreeEnergy.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `CalculateEnergy` | `galaxy_stubs/CalculateEnergy.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `CalculateSolvationFreeEnergy` | `galaxy_stubs/CalculateSolvationFreeEnergy.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `CombiLibGenerator` | `galaxy_stubs/CombiLibGenerator.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `Converter` | `galaxy_stubs/Converter.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `CrystalGenerator` | `galaxy_stubs/CrystalGenerator.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `DockResultMerger` | `galaxy_stubs/DockResultMerger.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `EvenSplit` | `galaxy_stubs/EvenSplit.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `ExtractClustersFromWardTree` | `galaxy_stubs/ExtractClustersFromWardTree.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `ExtractProteinSequence` | `galaxy_stubs/ExtractProteinSequence.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `FeatureSelector` | `galaxy_stubs/FeatureSelector.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `FingerprintSimilarityClustering` | `galaxy_stubs/FingerprintSimilarityClustering.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `FingerprintSimilaritySearch` | `galaxy_stubs/FingerprintSimilaritySearch.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `InputPartitioner` | `galaxy_stubs/InputPartitioner.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `InputReader` | `galaxy_stubs/InputReader.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `InteractionConstraintDefiner` | `galaxy_stubs/InteractionConstraintDefiner.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `LigCheck` | `galaxy_stubs/LigCheck.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `Ligand3DGenerator` | `galaxy_stubs/Ligand3DGenerator.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `LigandFileSplitter` | `galaxy_stubs/LigandFileSplitter.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `ModelCreator` | `galaxy_stubs/ModelCreator.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `MolCombine` | `galaxy_stubs/MolCombine.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `MolDepict` | `galaxy_stubs/MolDepict.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `MolFilter` | `galaxy_stubs/MolFilter.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `MolPredictor` | `galaxy_stubs/MolPredictor.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `PDBCutter` | `galaxy_stubs/PDBCutter.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `PDBDownload` | `galaxy_stubs/PDBDownload.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `PDBRMSDCalculator` | `galaxy_stubs/PDBRMSDCalculator.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `PartialChargesCopy` | `galaxy_stubs/PartialChargesCopy.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `PeptideBuilder` | `galaxy_stubs/PeptideBuilder.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `PocketDetector` | `galaxy_stubs/PocketDetector.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `Predictor` | `galaxy_stubs/Predictor.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `PropertyModifier` | `galaxy_stubs/PropertyModifier.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `PropertyPlotter` | `galaxy_stubs/PropertyPlotter.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `ProteinCheck` | `galaxy_stubs/ProteinCheck.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `ProteinProtonator` | `galaxy_stubs/ProteinProtonator.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `RMSDCalculator` | `galaxy_stubs/RMSDCalculator.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `RemoveWater` | `galaxy_stubs/RemoveWater.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `ResidueChecker` | `galaxy_stubs/ResidueChecker.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `ScoreAnalyzer` | `galaxy_stubs/ScoreAnalyzer.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `SeperateMolecules` | `galaxy_stubs/SeparateMolecules.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `SideChainGridBuilder` | `galaxy_stubs/SideChainGridBuilder.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `SimilarityAnalyzer` | `galaxy_stubs/SimilarityAnalyzer.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `SpatialConstraintDefiner` | `galaxy_stubs/SpatialConstraintDefiner.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `Trajectory2RigidTransformation` | `galaxy_stubs/Trajectory2RigidTransformation.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| luis/ball | `Validator` | `galaxy_stubs/Validator.xml` | `605370bc1def` | <a href="https://toolshed.g2.bx.psu.edu/view/luis/ball" target="_blank" rel="noopener noreferrer">view</a> |
+| lynngroup/testing5 | `id_gtf2fasta` | `testing5/gtf2fasta.xml` | `6fc5e177b396` | <a href="https://toolshed.g2.bx.psu.edu/view/lynngroup/testing5" target="_blank" rel="noopener noreferrer">view</a> |
+| maarten.schermer/gemma_vetgalaxy | `vetgalaxy_gemma` | `vetgalaxy_gemma.xml` | `6330436f9eb1` | <a href="https://toolshed.g2.bx.psu.edu/view/maarten.schermer/gemma_vetgalaxy" target="_blank" rel="noopener noreferrer">view</a> |
+| matteoc/agame_custom_tools | `ends_annot` | `annotate_ends/annotate_ends.xml` | `68a3648c7d91` | <a href="https://toolshed.g2.bx.psu.edu/view/matteoc/agame_custom_tools" target="_blank" rel="noopener noreferrer">view</a> |
+| matteoc/agame_custom_tools | `trimmer` | `mytrimmer/trimPE.xml` | `68a3648c7d91` | <a href="https://toolshed.g2.bx.psu.edu/view/matteoc/agame_custom_tools" target="_blank" rel="noopener noreferrer">view</a> |
+| matteoc/agame_custom_tools | `pfam_Filter` | `pfam_search/pfam_filter.xml` | `68a3648c7d91` | <a href="https://toolshed.g2.bx.psu.edu/view/matteoc/agame_custom_tools" target="_blank" rel="noopener noreferrer">view</a> |
+| mkh/ips5 | `fastabox` | `interproscan5/fastabox.xml` | `1d6b3be059c8` | <a href="https://toolshed.g2.bx.psu.edu/view/mkh/ips5" target="_blank" rel="noopener noreferrer">view</a> |
+| mkh/ips5 | `ips5` | `interproscan5/ips5.xml` | `1d6b3be059c8` | <a href="https://toolshed.g2.bx.psu.edu/view/mkh/ips5" target="_blank" rel="noopener noreferrer">view</a> |
+| mkh/ips5 | `ipsfaux` | `interproscan5/ipsfaux.xml` | `1d6b3be059c8` | <a href="https://toolshed.g2.bx.psu.edu/view/mkh/ips5" target="_blank" rel="noopener noreferrer">view</a> |
+| mkh/play | `interproscan` | `interproscan5/interproscan.xml` | `f41c8f299270` | <a href="https://toolshed.g2.bx.psu.edu/view/mkh/play" target="_blank" rel="noopener noreferrer">view</a> |
+| nanette/nanette_test | `script_path` | `test_script_path.xml` | `900854ec76e6` | <a href="https://toolshed.g2.bx.psu.edu/view/nanette/nanette_test" target="_blank" rel="noopener noreferrer">view</a> |
+| nilesh/bcftools | `BCF Tools Cat` | `bcftools_cat.xml` | `14567aa2be12` | <a href="https://toolshed.g2.bx.psu.edu/view/nilesh/bcftools" target="_blank" rel="noopener noreferrer">view</a> |
+| pieterlukasse/prims_metabolomics2 | `lookup_library` | `GCMS/library_lookup.xml` | `9f03c8587d6b` | <a href="https://toolshed.g2.bx.psu.edu/view/pieterlukasse/prims_metabolomics2" target="_blank" rel="noopener noreferrer">view</a> |
+| pmac/iterativepca | `pca_pipeline` | `pca_pipeline_def.xml` | `64e75e21466e` | <a href="https://toolshed.g2.bx.psu.edu/view/pmac/iterativepca" target="_blank" rel="noopener noreferrer">view</a> |
+| proteore/proteore_expression_levels_by_tissue | `sel_ann_hpa` | `get_expression_profiles.xml` | `2173192d4824` | <a href="https://toolshed.g2.bx.psu.edu/view/proteore/proteore_expression_levels_by_tissue" target="_blank" rel="noopener noreferrer">view</a> |
+| rnateam/data_manager_sortmerna_database_downloader | `data_manager_sortmerna_download` | `data_manager/data_manager_sortmerna_download.xml` | `7d2252852f96` | <a href="https://toolshed.g2.bx.psu.edu/view/rnateam/data_manager_sortmerna_database_downloader" target="_blank" rel="noopener noreferrer">view</a> |
+| rnateam/vienna_rna | `rna2dfold` | `rna2dfold.xml` | `04c56f5b0907` | <a href="https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna" target="_blank" rel="noopener noreferrer">view</a> |
+| rnateam/vienna_rna | `rnaaliduplex` | `rnaaliduplex.xml` | `04c56f5b0907` | <a href="https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna" target="_blank" rel="noopener noreferrer">view</a> |
+| rnateam/vienna_rna | `rnaalifold` | `rnaalifold.xml` | `04c56f5b0907` | <a href="https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna" target="_blank" rel="noopener noreferrer">view</a> |
+| rnateam/vienna_rna | `rnacofold` | `rnacofold.xml` | `04c56f5b0907` | <a href="https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna" target="_blank" rel="noopener noreferrer">view</a> |
+| rnateam/vienna_rna | `rnadistance` | `rnadistance.xml` | `04c56f5b0907` | <a href="https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna" target="_blank" rel="noopener noreferrer">view</a> |
+| rnateam/vienna_rna | `rnaduplex` | `rnaduplex.xml` | `04c56f5b0907` | <a href="https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna" target="_blank" rel="noopener noreferrer">view</a> |
+| rnateam/vienna_rna | `rnaeval` | `rnaeval.xml` | `04c56f5b0907` | <a href="https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna" target="_blank" rel="noopener noreferrer">view</a> |
+| rnateam/vienna_rna | `rnaheat` | `rnaheat.xml` | `04c56f5b0907` | <a href="https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna" target="_blank" rel="noopener noreferrer">view</a> |
+| rnateam/vienna_rna | `rnainverse` | `rnainverse.xml` | `04c56f5b0907` | <a href="https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna" target="_blank" rel="noopener noreferrer">view</a> |
+| rnateam/vienna_rna | `rnalalifold` | `rnalalifold.xml` | `04c56f5b0907` | <a href="https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna" target="_blank" rel="noopener noreferrer">view</a> |
+| rnateam/vienna_rna | `rnalfold` | `rnalfold.xml` | `04c56f5b0907` | <a href="https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna" target="_blank" rel="noopener noreferrer">view</a> |
+| rnateam/vienna_rna | `rnapaln` | `rnapaln.xml` | `04c56f5b0907` | <a href="https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna" target="_blank" rel="noopener noreferrer">view</a> |
+| rnateam/vienna_rna | `rnapdist` | `rnapdist.xml` | `04c56f5b0907` | <a href="https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna" target="_blank" rel="noopener noreferrer">view</a> |
+| rnateam/vienna_rna | `rnapkplex` | `rnapkplex.xml` | `04c56f5b0907` | <a href="https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna" target="_blank" rel="noopener noreferrer">view</a> |
+| rnateam/vienna_rna | `rnaplex` | `rnaplex.xml` | `04c56f5b0907` | <a href="https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna" target="_blank" rel="noopener noreferrer">view</a> |
+| rnateam/vienna_rna | `rnaplfold` | `rnaplfold.xml` | `04c56f5b0907` | <a href="https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna" target="_blank" rel="noopener noreferrer">view</a> |
+| rnateam/vienna_rna | `rnaplot` | `rnaplot.xml` | `04c56f5b0907` | <a href="https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna" target="_blank" rel="noopener noreferrer">view</a> |
+| rnateam/vienna_rna | `rnasnoop` | `rnasnoop.xml` | `04c56f5b0907` | <a href="https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna" target="_blank" rel="noopener noreferrer">view</a> |
+| rnateam/vienna_rna | `rnasubopt` | `rnasubopt.xml` | `04c56f5b0907` | <a href="https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna" target="_blank" rel="noopener noreferrer">view</a> |
+| rnateam/vienna_rna | `rnaup` | `rnaup.xml` | `04c56f5b0907` | <a href="https://toolshed.g2.bx.psu.edu/view/rnateam/vienna_rna" target="_blank" rel="noopener noreferrer">view</a> |
+| s-kaufmann/synteny_mapper | `SyntenyMapper1` | `synteny-mapper.xml` | `1fdfbe87a959` | <a href="https://toolshed.g2.bx.psu.edu/view/s-kaufmann/synteny_mapper" target="_blank" rel="noopener noreferrer">view</a> |
+| saskia-hiltemann/annovar | `AnnovarShed` | `tools/annovar/annovar.xml` | `f7ff063c738e` | <a href="https://toolshed.g2.bx.psu.edu/view/saskia-hiltemann/annovar" target="_blank" rel="noopener noreferrer">view</a> |
+| si-datascience/genome_tools | `interproscan` | `interproscan5-e32f2ea6a139/interproscan.xml` | `5a720d9e7071` | <a href="https://toolshed.g2.bx.psu.edu/view/si-datascience/genome_tools" target="_blank" rel="noopener noreferrer">view</a> |
+| si-datascience/interps_test | `ips5` | `interproscan5/ips5.xml` | `0da2847fc108` | <a href="https://toolshed.g2.bx.psu.edu/view/si-datascience/interps_test" target="_blank" rel="noopener noreferrer">view</a> |
+| swebb/pycrac | `pyCalculateChromosomeLengths` | `pyCRAC/pyCalculateChromosomeLengths.xml` | `7c9574213c0a` | <a href="https://toolshed.g2.bx.psu.edu/view/swebb/pycrac" target="_blank" rel="noopener noreferrer">view</a> |
+| swebb/pycrac | `pyFastqJoiner` | `pyCRAC/pyFastqJoiner.xml` | `7c9574213c0a` | <a href="https://toolshed.g2.bx.psu.edu/view/swebb/pycrac" target="_blank" rel="noopener noreferrer">view</a> |
+| takakoron/merge_snpsindels_files | `Merge_DNA_polymorphism_files_docker` | `Merge_SNPsInDels_files_docker.xml` | `5da57f040f2e` | <a href="https://toolshed.g2.bx.psu.edu/view/takakoron/merge_snpsindels_files" target="_blank" rel="noopener noreferrer">view</a> |
+| testing/testing4 | `id_gtf2fasta` | `testing4/gtf2fasta.xml` | `3406cf04baac` | <a href="https://toolshed.g2.bx.psu.edu/view/testing/testing4" target="_blank" rel="noopener noreferrer">view</a> |
+| timpalpant/java_genomics_toolkit | `matrix2png` | `galaxy-conf/matrix2png.xml` | `b43c420a6135` | <a href="https://toolshed.g2.bx.psu.edu/view/timpalpant/java_genomics_toolkit" target="_blank" rel="noopener noreferrer">view</a> |
+| tools-artbio | `ont_fast5_api_multi_to_single_fast5` | `deprecated/ont_fast5_api/multi_to_single_fast5.xml` | `fcb46aafd088` | <a href="https://github.com/ARTbio/tools-artbio/blob/fcb46aafd088f10c4a1c7f00a29dfd443d11c8c3/deprecated/ont_fast5_api/multi_to_single_fast5.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| tools-artbio | `ont_fast5_api_single_to_multi_fast5` | `deprecated/ont_fast5_api/single_to_multi_fast5.xml` | `fcb46aafd088` | <a href="https://github.com/ARTbio/tools-artbio/blob/fcb46aafd088f10c4a1c7f00a29dfd443d11c8c3/deprecated/ont_fast5_api/single_to_multi_fast5.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| tools-devteam | `bwa_color_wrapper` | `deprecated/tools/bwa_wrappers/bwa_color_wrapper.xml` | `5d53a79839c6` | <a href="https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/deprecated/tools/bwa_wrappers/bwa_color_wrapper.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| tools-devteam | `Fetch Taxonomic Ranks` | `tool_collections/taxonomy/gi2taxonomy/gi2taxonomy.xml` | `5d53a79839c6` | <a href="https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tool_collections/taxonomy/gi2taxonomy/gi2taxonomy.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| tools-devteam | `Draw_phylogram` | `tool_collections/taxonomy/t2ps/t2ps_wrapper.xml` | `5d53a79839c6` | <a href="https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tool_collections/taxonomy/t2ps/t2ps_wrapper.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| tools-devteam | `t2t_report` | `tool_collections/taxonomy/t2t_report/t2t_report.xml` | `5d53a79839c6` | <a href="https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tool_collections/taxonomy/t2t_report/t2t_report.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| tools-devteam | `indelRates_3way` | `tools/getindelrates_3way/getIndelRates_3way.xml` | `5d53a79839c6` | <a href="https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/getindelrates_3way/getIndelRates_3way.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| tools-devteam | `getIndels_2way` | `tools/getindels_2way/getIndels_2way.xml` | `5d53a79839c6` | <a href="https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/getindels_2way/getIndels_2way.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| tools-devteam | `indels_3way` | `tools/indels_3way/getIndels_3way.xml` | `5d53a79839c6` | <a href="https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/indels_3way/getIndels_3way.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| tools-devteam | `LinearRegression1` | `tools/linear_regression/linear_regression.xml` | `5d53a79839c6` | <a href="https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/linear_regression/linear_regression.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| tools-devteam | `LogisticRegression` | `tools/logistic_regression_vif/logistic_regression_vif.xml` | `5d53a79839c6` | <a href="https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/logistic_regression_vif/logistic_regression_vif.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| tools-devteam | `cpgFilter` | `tools/maf_cpg_filter/maf_cpg_filter.xml` | `5d53a79839c6` | <a href="https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/maf_cpg_filter/maf_cpg_filter.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| tools-devteam | `microsatellite_birthdeath` | `tools/microsatellite_birthdeath/microsatellite_birthdeath.xml` | `5d53a79839c6` | <a href="https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/microsatellite_birthdeath/microsatellite_birthdeath.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| tools-devteam | `microsats_align1` | `tools/microsats_alignment_level/microsats_alignment_level.xml` | `5d53a79839c6` | <a href="https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/microsats_alignment_level/microsats_alignment_level.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| tools-devteam | `microsats_mutability1` | `tools/microsats_mutability/microsats_mutability.xml` | `5d53a79839c6` | <a href="https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/microsats_mutability/microsats_mutability.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| tools-devteam | `multispecies_orthologous_microsats` | `tools/multispecies_orthologous_microsats/multispecies_MicrosatDataGenerator_interrupted_GALAXY.xml` | `5d53a79839c6` | <a href="https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/multispecies_orthologous_microsats/multispecies_MicrosatDataGenerator_interrupted_GALAXY.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| tools-devteam | `partialRsq` | `tools/partialr_square/partialR_square.xml` | `5d53a79839c6` | <a href="https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/partialr_square/partialR_square.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| tools-devteam | `qualityFilter` | `tools/quality_filter/quality_filter.xml` | `5d53a79839c6` | <a href="https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/quality_filter/quality_filter.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| tools-devteam | `rcve1` | `tools/rcve/rcve.xml` | `5d53a79839c6` | <a href="https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/rcve/rcve.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| tools-devteam | `hist_high_quality_score` | `tools/short_reads_figure_high_quality_length/short_reads_figure_high_quality_length.xml` | `5d53a79839c6` | <a href="https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/short_reads_figure_high_quality_length/short_reads_figure_high_quality_length.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| tools-devteam | `quality_score_distribution` | `tools/short_reads_figure_score/short_reads_figure_score.xml` | `5d53a79839c6` | <a href="https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/short_reads_figure_score/short_reads_figure_score.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| tools-devteam | `trim_reads` | `tools/short_reads_trim_seq/short_reads_trim_seq.xml` | `5d53a79839c6` | <a href="https://github.com/galaxyproject/tools-devteam/blob/5d53a79839c6d9b7c1f13e8f5bd9f65d69d96a46/tools/short_reads_trim_seq/short_reads_trim_seq.xml" target="_blank" rel="noopener noreferrer">view</a> |
+| triasteran/ribogalaxy_get_chrom_sizes_upd | `get_chrom_sizes` | `get_chrom_sizes/get_chrom_sizes.xml` | `f2306942d61a` | <a href="https://toolshed.g2.bx.psu.edu/view/triasteran/ribogalaxy_get_chrom_sizes_upd" target="_blank" rel="noopener noreferrer">view</a> |
+| trinity_ctat/ctat_clean_headers | `ctat_clean_headers` | `ctat_clean_headers.xml` | `67e77c325002` | <a href="https://toolshed.g2.bx.psu.edu/view/trinity_ctat/ctat_clean_headers" target="_blank" rel="noopener noreferrer">view</a> |
+| trinity_ctat/ctat_discasm | `ctat_discasm` | `ctat_discasm.xml` | `a772e555b5a1` | <a href="https://toolshed.g2.bx.psu.edu/view/trinity_ctat/ctat_discasm" target="_blank" rel="noopener noreferrer">view</a> |
+| trinity_ctat/ctat_fusion_inspector | `ctat_fusion_inspector` | `ctat_fusion_inspector.xml` | `1a7ec343001c` | <a href="https://toolshed.g2.bx.psu.edu/view/trinity_ctat/ctat_fusion_inspector" target="_blank" rel="noopener noreferrer">view</a> |
+| trinity_ctat/ctat_gmap_fusion | `ctat_gmap_fusion` | `ctat_gmap_fusion.xml` | `966ea55e1aae` | <a href="https://toolshed.g2.bx.psu.edu/view/trinity_ctat/ctat_gmap_fusion" target="_blank" rel="noopener noreferrer">view</a> |
+| ulfschaefer/phephenix | `vcfs2fasta` | `vcfs2fasta.xml` | `9c63ab34838d` | <a href="https://toolshed.g2.bx.psu.edu/view/ulfschaefer/phephenix" target="_blank" rel="noopener noreferrer">view</a> |
+| victor/rsem | `live-rsem-1.1.17` | `rsem/rsem-1.1.17.xml` | `560aaa69b532` | <a href="https://toolshed.g2.bx.psu.edu/view/victor/rsem" target="_blank" rel="noopener noreferrer">view</a> |
+| xuebing/kplogo | `kplogo` | `kplogo.xml` | `89aa9e0df5d4` | <a href="https://toolshed.g2.bx.psu.edu/view/xuebing/kplogo" target="_blank" rel="noopener noreferrer">view</a> |
+| yusuf/add_missing_coverage | `hgvs_add_coverage` | `AddMissingCoverage.xml` | `a3129cb0af43` | <a href="https://toolshed.g2.bx.psu.edu/view/yusuf/add_missing_coverage" target="_blank" rel="noopener noreferrer">view</a> |
+| yusuf/add_names_bed | `add_names_to_bed_1` | `AddNamesToBED.xml` | `5e699c743e37` | <a href="https://toolshed.g2.bx.psu.edu/view/yusuf/add_names_bed" target="_blank" rel="noopener noreferrer">view</a> |
+| yusuf/annotate_hgvs | `hgvs_annotation_2` | `AnnotateVariants.xml` | `9977d1935a07` | <a href="https://toolshed.g2.bx.psu.edu/view/yusuf/annotate_hgvs" target="_blank" rel="noopener noreferrer">view</a> |
+| yusuf/associate_phenotypes | `hgvs_assoc_phenos` | `AssociatePhenotypes.xml` | `6411ca16916e` | <a href="https://toolshed.g2.bx.psu.edu/view/yusuf/associate_phenotypes" target="_blank" rel="noopener noreferrer">view</a> |
+| yusuf/combine_hgvs_annotations | `hgvs_combine_1` | `CombineHGVSAnnotations.xml` | `baf1543e8ae1` | <a href="https://toolshed.g2.bx.psu.edu/view/yusuf/combine_hgvs_annotations" target="_blank" rel="noopener noreferrer">view</a> |
+| yusuf/concordance_report | `concordance_report_1` | `ConcordanceReport.xml` | `2d601bd04c93` | <a href="https://toolshed.g2.bx.psu.edu/view/yusuf/concordance_report" target="_blank" rel="noopener noreferrer">view</a> |
+| yusuf/dedup_realign_bam | `dedup_realign_bam_1` | `DedupRealignBAM.xml` | `6b673ffd9e38` | <a href="https://toolshed.g2.bx.psu.edu/view/yusuf/dedup_realign_bam" target="_blank" rel="noopener noreferrer">view</a> |
+| yusuf/depth_report | `depth_reports_1` | `DepthReports.xml` | `a0f4b5618eee` | <a href="https://toolshed.g2.bx.psu.edu/view/yusuf/depth_report" target="_blank" rel="noopener noreferrer">view</a> |
+| yusuf/extend_bed_regions | `extend_bed_regions_1` | `ExtendBedRegions.xml` | `cb1c17dddc14` | <a href="https://toolshed.g2.bx.psu.edu/view/yusuf/extend_bed_regions" target="_blank" rel="noopener noreferrer">view</a> |
+| yusuf/filter_bam_list | `filter_bam_by_list_1` | `FilterBAMByNamesList.xml` | `42af0b971c55` | <a href="https://toolshed.g2.bx.psu.edu/view/yusuf/filter_bam_list" target="_blank" rel="noopener noreferrer">view</a> |
+| yusuf/filter_table_by_names | `filter_by_list_1` | `FilterTableByNamesList.xml` | `f92e6aff30b7` | <a href="https://toolshed.g2.bx.psu.edu/view/yusuf/filter_table_by_names" target="_blank" rel="noopener noreferrer">view</a> |
+| yusuf/group_alt_variants | `hgvs_group_alt_variants` | `GroupAltTranscriptVariants.xml` | `7c94246126b0` | <a href="https://toolshed.g2.bx.psu.edu/view/yusuf/group_alt_variants" target="_blank" rel="noopener noreferrer">view</a> |
+| yusuf/gvf_to_vcf | `gvf_to_vcf_1` | `GVF2VCF.xml` | `18d965813efc` | <a href="https://toolshed.g2.bx.psu.edu/view/yusuf/gvf_to_vcf" target="_blank" rel="noopener noreferrer">view</a> |
+| yusuf/hgvs_vcf | `hgvs2vcf_1` | `HGVS2VCF.xml` | `138d81f259c8` | <a href="https://toolshed.g2.bx.psu.edu/view/yusuf/hgvs_vcf" target="_blank" rel="noopener noreferrer">view</a> |
+| yusuf/microarray_report | `microarray_reports_1` | `MicroarrayReports.xml` | `882d119ede1f` | <a href="https://toolshed.g2.bx.psu.edu/view/yusuf/microarray_report" target="_blank" rel="noopener noreferrer">view</a> |
+| yusuf/miseq_bam_variants | `call_miseq_vars` | `MiSeqBAMtoVariants.xml` | `1a23ea467feb` | <a href="https://toolshed.g2.bx.psu.edu/view/yusuf/miseq_bam_variants" target="_blank" rel="noopener noreferrer">view</a> |
+| yusuf/miseq_fastq_bam | `generate_miseq_pe_bam` | `MiSeqFastQtoBAM.xml` | `8f4d4b4e8b04` | <a href="https://toolshed.g2.bx.psu.edu/view/yusuf/miseq_fastq_bam" target="_blank" rel="noopener noreferrer">view</a> |
+| yusuf/poor_gene_coverage | `poor_gene_coverage` | `PoorGeneCoverage.xml` | `7cdd13ff182a` | <a href="https://toolshed.g2.bx.psu.edu/view/yusuf/poor_gene_coverage" target="_blank" rel="noopener noreferrer">view</a> |
+| yusuf/snp_report | `snp_reports_1` | `SNPReports.xml` | `14e1cf728269` | <a href="https://toolshed.g2.bx.psu.edu/view/yusuf/snp_report" target="_blank" rel="noopener noreferrer">view</a> |
+| yusuf/triage_rare_genotypes | `hgvs_combine_1` | `TriageRareGenotypes.xml` | `0d7a85ddac86` | <a href="https://toolshed.g2.bx.psu.edu/view/yusuf/triage_rare_genotypes" target="_blank" rel="noopener noreferrer">view</a> |

@@ -1063,7 +1063,11 @@ def _write_failure_details(
             path = str(row["path"])
             tool_id = str(row["tool_id"])
             url = _tool_source_url(repo, version, path)
-            link = f"[view]({url})" if url else "—"
+            link = (
+                f'<a href="{url}" target="_blank" rel="noopener noreferrer">view</a>'
+                if url
+                else "—"
+            )
             lines.append(
                 f"| {repo} | `{tool_id}` | `{path}` | `{version[:12]}` | {link} |"
             )
@@ -1462,9 +1466,7 @@ def main(argv: list[str]) -> int:
         if args.source == "combined":
             failures_dir = _CORPUS_DATA_DIR / _FAILURE_DETAILS_SUBDIR
             _write_failure_details(rows=state.rows, output_dir=failures_dir)
-            logger.info(
-                "failure details -> %s/", failures_dir.relative_to(_REPO_ROOT)
-            )
+            logger.info("failure details -> %s/", failures_dir.relative_to(_REPO_ROOT))
     return 0
 
 
