@@ -55,6 +55,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import html
 import json
 import logging
 import re
@@ -950,11 +951,14 @@ def _format_reason_table(
         return lines
     for reason in sorted(counts, key=lambda r: (-counts[r], r)):
         n = counts[reason]
-        label = (
-            f"[{reason}]({link_base}/{_failure_slug(reason)}.md)"
-            if link_base is not None
-            else reason
-        )
+        if link_base is None:
+            label = reason
+        else:
+            href = f"{link_base}/{_failure_slug(reason)}.md"
+            label = (
+                f'<a href="{href}" target="_blank" rel="noopener noreferrer">'
+                f"{html.escape(reason, quote=False)}</a>"
+            )
         lines.append(f"| {label} | {n} | {n / total * 100:.1f}% |")
     lines.append(f"| **total** | **{total}** | **100.0%** |")
     return lines
