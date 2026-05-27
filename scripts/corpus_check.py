@@ -35,8 +35,11 @@ validating profiles, the cross-tab between them, macro usage, and validity
 contiguity. The declared-profile distribution and cross-tab use the profile
 **after macro expansion** (what Galaxy actually validates against); the raw
 pre-expansion distribution is available via ``--include-raw-profile`` as a
-diagnostic. The stats write is skipped for partial sweeps (``--limit`` or
-``--repo``) and can be disabled with ``--no-stats``.
+diagnostic. The **combined** artifact additionally breaks down the two
+failure modes — macro-expansion failures and no-valid-profile schema errors —
+into named reason categories so the "are these our bugs?" question can be
+answered at a glance. The stats write is skipped for partial sweeps
+(``--limit`` or ``--repo``) and can be disabled with ``--no-stats``.
 
 Usage::
 
@@ -54,6 +57,7 @@ import argparse
 import hashlib
 import json
 import logging
+import re
 import shutil
 import subprocess
 import sys
@@ -76,8 +80,8 @@ from galaxy_tool_xml.binding import (
 )
 from galaxy_tool_xml.corrections import suggest_corrections
 from galaxy_tool_xml.document import ToolDocument
-from galaxy_tool_xml.macros import expand_from_path, has_macros
-from galaxy_tool_xml.profiles import available_profiles
+from galaxy_tool_xml.macros import MacroError, expand_from_path, has_macros
+from galaxy_tool_xml.profiles import available_profiles, latest_profile
 
 logger = logging.getLogger("corpus_check")
 
@@ -98,7 +102,15 @@ _CORPUS_DATA_BASENAMES = {
     "combined": "combined_corpus_data",
 }
 _FINE_GRAINED_BASE_COLUMNS = ("repo", "version", "path", "tool_id", "sha256")
-_FINE_GRAINED_PROFILE_COLUMNS = ("profile_raw", "profile_expanded", "newest_valid")
+_FINE_GRAINED_PROFILE_COLUMNS = (
+    "profile_raw",
+    "profile_expanded",
+    "newest_valid",
+    "expansion_failure_reason",
+    "no_valid_reason",
+)
+_FAILURE_DETAILS_SUBDIR = "failures"
+_TOOLSHED_BASE_URL = "https://toolshed.g2.bx.psu.edu/repos"
 _SOURCES = ("github", "toolshed", "combined")
 _COMBINED_SUB_SOURCES = ("github", "toolshed")
 _PROFILE_NONE = "(none)"
@@ -127,6 +139,14 @@ class ToolStats:
     validity: list[bool]  # one entry per available_profiles(), oldest first
     has_macros: bool
     contiguous: bool
+    # Set only when profile_expanded == _PROFILE_EXPANSION_FAILED; categorises
+    # the macro-expansion error (undefined macro, missing import, malformed
+    # XML, etc.) — surfaced in the combined stats markdown.
+    expansion_failure_reason: str | None = None
+    # Set only when newest_valid == _PROFILE_NONE; categorises why no vendored
+    # profile accepted the tool (XSD missing attribute, missing element,
+    # invalid boolean, etc., or "(macro expansion failed)" when group A).
+    no_valid_reason: str | None = None
 
 
 _CORPUS_SOURCES_FILE = _REPO_ROOT / "corpus_sources.json"
@@ -390,34 +410,108 @@ def is_contiguous(vector: list[bool]) -> bool:
     return all(vector[first : last + 1])
 
 
+_MACRO_FAIL_MALFORMED = re.compile(
+    r"invalid element|tag mismatch|hyphen within comment|StartTag|EndTag"
+)
+
+
+def _expansion_failure_reason(errors: list[MacroError]) -> str:
+    """Categorise the first ``MacroError`` from a failed expansion.
+
+    Empirically the corpus produces three macro-failure modes plus a
+    catch-all: undefined `<expand>` target, missing imported macro file,
+    and malformed XML in the tool itself. The combined stats markdown
+    aggregates these so the breakdown is visible at a glance.
+    """
+    if not errors:
+        return "other macro error"
+    message = errors[0].message
+    if "No macro named" in message:
+        return "undefined macro reference in <expand>"
+    if "No such file or directory" in message:
+        return "imported macros.xml file not on disk"
+    if _MACRO_FAIL_MALFORMED.search(message):
+        return "malformed XML in tool file"
+    return "other macro error"
+
+
 def _expanded_attrs(
     path: Path, document: ToolDocument, *, has_macros_flag: bool
-) -> tuple[str, str]:
-    """Return ``(profile, tool_id)`` after macro expansion.
+) -> tuple[str, str, str | None]:
+    """Return ``(profile, tool_id, expansion_failure_reason)`` after expansion.
 
     For macro-free tools, expansion is a no-op and the raw attributes are
-    returned. For macro-using tools, the tool is expanded from disk **once**
-    and both attributes are read from the expanded tree, so adding
-    ``tool_id`` here costs no extra expansion. ``profile`` becomes
-    ``_PROFILE_EXPANSION_FAILED`` when expansion fails; ``tool_id`` then
-    falls back to the raw ``@id`` (typically a macro-token string like
-    ``bcftools_@EXECUTABLE@``, more informative than an empty string).
+    returned with ``expansion_failure_reason=None``. For macro-using tools
+    the tool is expanded from disk **once** and both attributes are read
+    from the expanded tree, so adding ``tool_id`` here costs no extra
+    expansion. ``profile`` becomes ``_PROFILE_EXPANSION_FAILED`` when
+    expansion fails; ``tool_id`` then falls back to the raw ``@id``
+    (typically a macro-token string like ``bcftools_@EXECUTABLE@``, more
+    informative than an empty string); ``expansion_failure_reason``
+    categorises the failure for the combined stats artifact.
     """
     raw_id = document.root.get("id") or ""
     if not has_macros_flag:
-        return document.root.get("profile") or _PROFILE_NONE, raw_id
-    # _errors discarded here on purpose: this function's sole job is
-    # attribute detection, and any macro-expansion errors surface
-    # separately via check_macro_handling and validate_tool's own
-    # macro_errors.
-    expanded, _errors = expand_from_path(path)
+        return document.root.get("profile") or _PROFILE_NONE, raw_id, None
+    expanded, errors = expand_from_path(path)
     if expanded is None:
-        return _PROFILE_EXPANSION_FAILED, raw_id
+        return _PROFILE_EXPANSION_FAILED, raw_id, _expansion_failure_reason(errors)
     expanded_root = expanded.getroot()
     return (
         expanded_root.get("profile") or _PROFILE_NONE,
         expanded_root.get("id") or raw_id,
+        None,
     )
+
+
+def _no_valid_reason(
+    path: Path, document: ToolDocument, *, expansion_failure_reason: str | None
+) -> str:
+    """Categorise why a tool's validity vector is empty (no vendored profile).
+
+    Returns the short ``"(macro expansion failed)"`` sentinel when the
+    expansion never produced a tree (the per-reason breakdown is reported
+    separately by the macro-expansion section). Otherwise runs one more
+    ``validate_tool`` (a fresh parse + macro expansion + XSD validation)
+    against the tool's declared profile to pull the first error and
+    categorise it. The extra call only fires for no-valid tools (~8% of
+    the combined sweep), so its cost is bounded and dwarfed by the
+    sweep-wide validation work.
+    """
+    if expansion_failure_reason is not None:
+        return "(macro expansion failed)"
+    declared = document.root.get("profile")
+    profile = declared if declared else latest_profile()
+    result = validate_tool(path, profile=profile, on_missing="nearest")
+    if result.syntax_errors:
+        message = result.syntax_errors[0].message
+        lowered = message.lower()
+        if "character encoding" in lowered or "invalid bytes" in lowered:
+            return "invalid character encoding (non-UTF-8 bytes)"
+        return "other XML syntax error"
+    if not result.errors:
+        # validity_vector saw every profile fail yet this single probe
+        # reports no schema errors; capture as untriaged rather than
+        # silently dropping the count.
+        return "untriaged (no schema error at probed profile)"
+    message = result.errors[0].message
+    if "is not allowed" in message and "attribute" in message:
+        return "XSD does not declare attribute used by tool"
+    if "not expected" in message and "Element" in message:
+        return "XSD does not allow element under this parent"
+    if "is not allowed" in message and "Element" in message:
+        return "XSD does not allow element at all"
+    if "required but missing" in message:
+        return "XSD-required attribute missing on tool element"
+    if "facet 'enumeration'" in message:
+        return "attribute value outside XSD's enumeration"
+    if "not a valid value" in message and (
+        "boolean" in message.lower() or "PermissiveBoolean" in message
+    ):
+        return "invalid boolean ('True'/'False' vs 'true'/'false')"
+    if "not a valid value" in message or "facet" in message:
+        return "other XSD type / pattern mismatch"
+    return "other"
 
 
 @dataclass
@@ -444,6 +538,9 @@ class _SweepState:
     signatures: Counter[str] = field(default_factory=Counter)
     retained_signatures: set[str] = field(default_factory=set)
     retained: list[tuple[str, str, Path, str, str]] = field(default_factory=list)
+    # Per-tool failure-reason counters surfaced in the combined stats markdown.
+    expansion_failure_counts: Counter[str] = field(default_factory=Counter)
+    no_valid_counts: Counter[str] = field(default_factory=Counter)
 
 
 def _validity_column(profile: str) -> str:
@@ -459,16 +556,19 @@ def _make_row(
     repo_dir: Path,
     sha: str,
     stats: ToolStats,
-) -> dict[str, str | int]:
+) -> dict[str, str | int | None]:
     """Construct one fine-grained data row from a tool's stats.
 
     Every row carries the full combined-schema columns (identifying
-    fields, the three profile fields, and one ``valid_<profile>`` flag
-    per vendored profile); the per-source emitter drops the
-    profile-derived columns when it writes a single-source artifact.
-    Keeping one dict shape avoids near-identical builders.
+    fields, the profile fields, the two failure-reason fields, and one
+    ``valid_<profile>`` flag per vendored profile); the per-source
+    emitter drops the profile-derived columns when it writes a
+    single-source artifact. ``expansion_failure_reason`` /
+    ``no_valid_reason`` are ``None`` for the common case where the tool
+    expanded and validated cleanly; this is preserved through JSON as
+    ``null`` and rendered as empty string in TSV.
     """
-    row: dict[str, str | int] = {
+    row: dict[str, str | int | None] = {
         "repo": display_name,
         "version": version,
         "path": str(path.relative_to(repo_dir)),
@@ -477,6 +577,8 @@ def _make_row(
         "profile_raw": stats.profile_raw,
         "profile_expanded": stats.profile_expanded,
         "newest_valid": stats.newest_valid,
+        "expansion_failure_reason": stats.expansion_failure_reason,
+        "no_valid_reason": stats.no_valid_reason,
     }
     for profile, ok in zip(available_profiles(), stats.validity, strict=True):
         row[_validity_column(profile)] = 1 if ok else 0
@@ -516,8 +618,15 @@ def _exercise(
         contiguous = is_contiguous(vector)
         if collect_stats:
             has_macros_flag = has_macros(document.root)
-            profile_expanded, tool_id = _expanded_attrs(
+            profile_expanded, tool_id, expansion_reason = _expanded_attrs(
                 path, document, has_macros_flag=has_macros_flag
+            )
+            no_valid_reason = (
+                _no_valid_reason(
+                    path, document, expansion_failure_reason=expansion_reason
+                )
+                if newest_valid == _PROFILE_NONE
+                else None
             )
             stats: ToolStats | None = ToolStats(
                 profile_raw=document.root.get("profile") or _PROFILE_NONE,
@@ -527,6 +636,8 @@ def _exercise(
                 validity=vector,
                 has_macros=has_macros_flag,
                 contiguous=contiguous,
+                expansion_failure_reason=expansion_reason,
+                no_valid_reason=no_valid_reason,
             )
         else:
             stats = None
@@ -599,6 +710,10 @@ def _process_path(
         state.crosstab[(stats.profile_expanded, stats.newest_valid)] += 1
         state.macro_counts[stats.has_macros] += 1
         state.contiguity_counts[stats.contiguous] += 1
+        if stats.expansion_failure_reason is not None:
+            state.expansion_failure_counts[stats.expansion_failure_reason] += 1
+        if stats.no_valid_reason is not None:
+            state.no_valid_counts[stats.no_valid_reason] += 1
         if combined:
             state.sha_to_stats[sha] = stats
         state.rows.append(
@@ -800,6 +915,153 @@ def _format_sources_table(unique: Counter[str], duplicates: Counter[str]) -> lis
     return lines
 
 
+def _failure_slug(reason: str) -> str:
+    """Return a filesystem- and URL-friendly slug for a failure category."""
+    slug = re.sub(r"[^a-z0-9]+", "-", reason.lower()).strip("-")
+    return slug or "unknown"
+
+
+def _format_reason_table(
+    title: str,
+    intro: str,
+    counts: Counter[str],
+    *,
+    link_base: str | None = None,
+) -> list[str]:
+    """Render a failure-reason breakdown as a markdown table.
+
+    Percentages are of the category total (sum of ``counts``), not of
+    the whole sweep — these tables answer "how do tools in this failure
+    category split up?". A bold total row is appended. When
+    ``link_base`` is provided each reason cell becomes a markdown link
+    to ``<link_base>/<slug>.md`` so a reader can drill into the failing
+    tools for that category.
+    """
+    lines = [f"## {title}", "", intro, "", "| Reason | Tools | % |", "|---|---:|---:|"]
+    total = sum(counts.values())
+    if total == 0:
+        lines.append("| _(none)_ |  |  |")
+        return lines
+    for reason in sorted(counts, key=lambda r: (-counts[r], r)):
+        n = counts[reason]
+        label = (
+            f"[{reason}]({link_base}/{_failure_slug(reason)}.md)"
+            if link_base is not None
+            else reason
+        )
+        lines.append(f"| {label} | {n} | {n / total * 100:.1f}% |")
+    lines.append(f"| **total** | **{total}** | **100.0%** |")
+    return lines
+
+
+def _tool_source_url(repo: str, version: str, path: str) -> str | None:
+    """Return a clickable URL to ``path`` in ``repo`` at ``version``, or ``None``.
+
+    ``repo`` containing a ``/`` is treated as a toolshed ``owner/name``;
+    everything else is looked up in ``corpus_sources.json`` and mapped
+    to the upstream host's web view (github.com or gitlab.com). Returns
+    ``None`` when the upstream host is unrecognised, **or** when
+    ``version`` is the ``_UNKNOWN`` sentinel that `fetch_toolshed.py`
+    writes for clones predating the manifest — both would build a
+    deterministically-broken URL, so refusing to render a link is more
+    honest than emitting a 404.
+    """
+    if version == _UNKNOWN:
+        return None
+    if "/" in repo:
+        return f"{_TOOLSHED_BASE_URL}/{repo}/file/{version}/{path}"
+    sources = dict(_corpus_sources())
+    clone_url = sources.get(repo)
+    if clone_url is None:
+        return None
+    base = clone_url.removesuffix(".git").rstrip("/")
+    if "github.com/" in base:
+        return f"{base}/blob/{version}/{path}"
+    if "gitlab.com/" in base:
+        return f"{base}/-/blob/{version}/{path}"
+    return None
+
+
+def _write_failure_details(
+    rows: list[dict[str, str | int | None]],
+    *,
+    output_dir: Path,
+) -> None:
+    """Write per-failure-mode markdown indexes under ``output_dir``.
+
+    For each unique failure-reason category, write a markdown file
+    listing every failing tool with a link to the upstream source. A
+    ``README.md`` index links every category file with its count. Tools
+    are deduplicated by sha256 (the first occurrence wins) so the file
+    counts match the aggregate stats markdown.
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+    seen: set[str] = set()
+    by_reason: dict[str, list[dict[str, str | int | None]]] = {}
+    for row in rows:
+        sha = row.get("sha256")
+        if not isinstance(sha, str) or sha in seen:
+            continue
+        seen.add(sha)
+        # Each unique tool may land in two files: its expansion-failure
+        # sub-category (Group A) and / or its no-valid-reason category.
+        # Group A tools therefore appear in both their granular sub-page
+        # AND the "(macro expansion failed)" umbrella page so every link
+        # from the combined stats markdown resolves.
+        for reason in (
+            row.get("expansion_failure_reason"),
+            row.get("no_valid_reason"),
+        ):
+            if isinstance(reason, str):
+                by_reason.setdefault(reason, []).append(row)
+    index_lines = [
+        "# Failure-mode tool indexes",
+        "",
+        "One file per failure-reason category — click through to see the "
+        "failing tools at their upstream source. Tools are deduplicated by "
+        "sha256 (one entry per unique bytes); the link points to whichever "
+        "source repository was first seen for that tool in the combined "
+        "sweep. This index is regenerated by every full "
+        "`corpus_check.py --source combined` run.",
+        "",
+        "| Category | Tools | File |",
+        "|---|---:|---|",
+    ]
+    for reason in sorted(by_reason, key=lambda r: (-len(by_reason[r]), r)):
+        slug = _failure_slug(reason)
+        index_lines.append(
+            f"| {reason} | {len(by_reason[reason])} | [{slug}.md]({slug}.md) |"
+        )
+    (output_dir / "README.md").write_text(
+        "\n".join(index_lines) + "\n", encoding="utf-8"
+    )
+    for reason, reason_rows in by_reason.items():
+        slug = _failure_slug(reason)
+        lines = [
+            f"# {reason}",
+            "",
+            f"{len(reason_rows)} unique tool(s) fall into this category. Each "
+            "link goes to the source-repository view of the tool at the "
+            "version captured by the combined sweep.",
+            "",
+            "| Repository | tool_id | Path | Version | Source |",
+            "|---|---|---|---|---|",
+        ]
+        for row in sorted(reason_rows, key=lambda r: (str(r["repo"]), str(r["path"]))):
+            repo = str(row["repo"])
+            version = str(row["version"])
+            path = str(row["path"])
+            tool_id = str(row["tool_id"])
+            url = _tool_source_url(repo, version, path)
+            link = f"[view]({url})" if url else "—"
+            lines.append(
+                f"| {repo} | `{tool_id}` | `{path}` | `{version[:12]}` | {link} |"
+            )
+        (output_dir / f"{slug}.md").write_text(
+            "\n".join(lines) + "\n", encoding="utf-8"
+        )
+
+
 def _format_binary_table(
     title: str, true_label: str, false_label: str, counts: Counter[bool]
 ) -> list[str]:
@@ -831,7 +1093,7 @@ def _tsv_safe(value: str) -> str:
 
 def _write_corpus_data(
     *,
-    rows: list[dict[str, str | int]],
+    rows: list[dict[str, str | int | None]],
     source: str,
     include_profile_columns: bool,
 ) -> None:
@@ -839,13 +1101,15 @@ def _write_corpus_data(
 
     The per-source artifacts carry only the identifying columns
     (``repo, version, path, tool_id, sha256``); the combined artifact
-    appends the three profile columns
-    (``profile_raw, profile_expanded, newest_valid``) plus one
+    appends the profile columns (``profile_raw, profile_expanded,
+    newest_valid, expansion_failure_reason, no_valid_reason``) plus one
     ``valid_<profile>`` column per vendored profile (``0`` / ``1``,
     oldest profile first). JSON: an array of objects with the schema's
-    column order preserved; validity flags are JSON integers. TSV: a
-    header row plus one row per tool, UTF-8, LF endings, with tab /
-    newline / CR replaced by a single space in field values.
+    column order preserved; validity flags are JSON integers, missing
+    failure-reasons are ``null``. TSV: header row plus one row per
+    tool, UTF-8, LF endings, with tab / newline / CR replaced by a
+    single space in field values and ``None`` rendered as the empty
+    string.
     """
     columns: tuple[str, ...] = _FINE_GRAINED_BASE_COLUMNS
     if include_profile_columns:
@@ -862,7 +1126,10 @@ def _write_corpus_data(
     )
     lines = ["\t".join(columns)]
     lines.extend(
-        "\t".join(_tsv_safe(str(record[column])) for column in columns)
+        "\t".join(
+            _tsv_safe("" if record[column] is None else str(record[column]))
+            for column in columns
+        )
         for record in projected
     )
     (_CORPUS_DATA_DIR / f"{basename}.tsv").write_text(
@@ -885,6 +1152,8 @@ def _write_stats(
     total: int,
     source_unique_counts: Counter[str],
     source_duplicate_counts: Counter[str],
+    expansion_failure_counts: Counter[str],
+    no_valid_counts: Counter[str],
 ) -> None:
     """Write the corpus statistics artifact for one source.
 
@@ -970,6 +1239,39 @@ def _write_stats(
     lines.append("")
     lines.extend(_format_crosstab(crosstab))
     lines.append("")
+    if source == "combined":
+        link_base = f"corpus_data/{_FAILURE_DETAILS_SUBDIR}"
+        lines.extend(
+            _format_reason_table(
+                "Macro-expansion failure reasons",
+                "Tools whose macros could not be expanded by "
+                "`galaxy.util.xml_macros` — the post-expansion tree never "
+                "reaches the XSD. The reason comes from the first "
+                "`MacroError` returned by the adapter; these are properties "
+                "of the tool itself (or its `<import>`s), not library bugs. "
+                "Click a reason to see the failing tools at their upstream "
+                "source.",
+                expansion_failure_counts,
+                link_base=link_base,
+            )
+        )
+        lines.append("")
+        lines.extend(
+            _format_reason_table(
+                "Tools with no valid vendored profile — reason breakdown",
+                "Tools whose validity vector is empty (no vendored XSD "
+                "accepts them). The reason is derived from the first "
+                "schema error reported at the tool's declared profile "
+                "(falling back to the latest profile if none is declared); "
+                "macro-expansion-failed tools are aggregated under "
+                "`(macro expansion failed)` — see the section above for "
+                "their breakdown. Click a reason to see the failing tools "
+                "at their upstream source.",
+                no_valid_counts,
+                link_base=link_base,
+            )
+        )
+        lines.append("")
     lines.extend(
         _format_binary_table("Macro usage", "Uses macros", "Macro-free", macro_counts)
     )
@@ -1137,6 +1439,8 @@ def main(argv: list[str]) -> int:
             total=tools,
             source_unique_counts=state.source_unique_counts,
             source_duplicate_counts=state.source_duplicate_counts,
+            expansion_failure_counts=state.expansion_failure_counts,
+            no_valid_counts=state.no_valid_counts,
         )
         _write_corpus_data(
             rows=state.rows,
@@ -1145,6 +1449,12 @@ def main(argv: list[str]) -> int:
         )
         logger.info("corpus stats -> %s", stats_path)
         logger.info("corpus data  -> %s/%s.{json,tsv}", data_dir_rel, data_basename)
+        if args.source == "combined":
+            failures_dir = _CORPUS_DATA_DIR / _FAILURE_DETAILS_SUBDIR
+            _write_failure_details(rows=state.rows, output_dir=failures_dir)
+            logger.info(
+                "failure details -> %s/", failures_dir.relative_to(_REPO_ROOT)
+            )
     return 0
 
 

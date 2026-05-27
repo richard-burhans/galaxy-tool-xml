@@ -158,12 +158,13 @@ non-obvious choices, several of them recently revisited.
 | **A "tool" is a file whose XML root element is literally `<tool>`.** Other XML files (tool_conf, repository_dependencies, etc.) are filtered out of stats and out of the fine-grained data file. | The library's domain is `<tool>` files; counting anything else would distort every distribution. |
 | **`combined` mode dedup affects stats counters and invariant checks only; the fine-grained data file emits *all occurrences*.** | The Sources table in the markdown counts how many duplicates were *dropped from the aggregate stats*; the fine-grained data answers "which repo/path actually has this tool", and that's a per-occurrence question. |
 | **Toolshed `version` = tip changeset captured via `hg id -i` before `.hg/` is removed.** Recorded in a top-level manifest `corpus/galaxy-toolshed/manifest.json`; missing entries default to `"unknown"`. | The ToolShed API doesn't expose tip changesets (Assumption 1.10); `.hg/` is removed to save ~80% disk. The manifest is the single source of truth and is gitignored (the corpus itself is). |
-| **`tool_id` column = post-macro-expansion `@id`**, falling back to the raw `@id` (often a macro-token string) on expansion failure. | Driven by the 2000-tool survey (§10.1) — `@id` is present on 100% of tools and is the tool's logical identity, distinct from its file path. The expansion is free because `_post_expansion_profile` already expands. |
+| **`tool_id` column = post-macro-expansion `@id`**, falling back to the raw `@id` (often a macro-token string) on expansion failure. | Driven by the 2000-tool survey (§10.1) — `@id` is present on 100% of tools and is the tool's logical identity, distinct from its file path. The expansion is free because `_expanded_attrs` already expands once and reads both `profile` and `id` from the result. |
 | **Fine-grained schema = (`repo`, `version`, `path`, `tool_id`, `sha256`)** for per-source files; **plus** (`profile_raw`, `profile_expanded`, `newest_valid`) and one `valid_<profile>` 0/1 flag per vendored profile (28 columns at time of writing) for the combined file. | User choice: keep per-source files minimal and put the cross-source profile analysis in the combined view. The per-profile validity flags expose the full validity vector so downstream consumers can reason about non-contiguity (§10.3) without re-running validation. |
 | **JSON + TSV, both formats every run.** JSON preserves schema column order via `dict` insertion order; TSV sanitises `\t` / `\n` / `\r` → space defensively. | Pandas / duckdb consume JSON; jq / awk / spreadsheets consume TSV. Both are tiny to write and worth shipping together. |
 | **Fine-grained data and markdown stats share one gate** (skipped on `--no-stats`, `--limit`, `--repo`). | Partial sweeps must never produce a truncated artifact. |
 | **Combined-mode duplicate rows reuse the first-seen `ToolStats` from a sha256→stats cache.** | Re-running `_exercise` on every duplicate would multiply the sweep time by ~2× without adding information (same bytes → same validity vector). |
 | **Tooling: `hg` and `git` binaries via subprocess; `urllib` for the GitHub REST API.** | Each script makes 2–3 calls per repo and the network dominates everything. PyGithub / GitPython / python-hglib would be heavyweight imports with no measurable benefit; the Mercurial Python API is explicitly *not* a stable surface. |
+| **Per-tool failure reasons categorized and surfaced in the combined stats markdown only.** Two new sections — *Macro-expansion failure reasons* (Group A) and *Tools with no valid vendored profile — reason breakdown* (Group A+B) — appear in `docs/combined_corpus_stats.md`. Tool-level reason fields (`expansion_failure_reason`, `no_valid_reason`) live on `ToolStats` but are not exposed in the fine-grained data files. | The aggregate breakdown answers "are these our bugs?" at a glance (the answer is *no* — see §10.4). The combined view is the right place because the breakdown is most informative when deduplicated across sources. Categorization runs only when needed (no-valid tools get one extra `validate_tool` call to pull the first error). |
 
 ---
 
@@ -280,6 +281,44 @@ again later.
 **Conclusion:** Assumption 1.6 holds across corpora at >2%. The
 `newest_valid_profile` implementation must remain a linear newest-first
 scan (Decision 4) — a binary search would be unsound.
+
+### 10.4 No-valid-profile taxonomy (2026-05-27 combined sweep)
+
+Of the 9,410 unique tools, **761** (8.1%) do not validate against any
+of the 28 vendored XSDs. Investigation showed every category traces to
+a genuine schema-noncompliant property of the tool, not a library bug.
+
+**Group A — macro expansion failed** (17 tools / 2.2% of the no-valid
+set): the post-expansion tree never reaches the XSD.
+
+| Reason | Count |
+|---|---:|
+| undefined macro reference in `<expand>` | 8 |
+| imported `macros.xml` file not on disk | 6 |
+| malformed XML in tool file (e.g. `--` inside a comment, unmatched tags) | 3 |
+
+**Group B — expansion ok, XSD rejects everywhere** (744 tools / 97.8%):
+
+| Reason | Count | % of no-valid |
+|---|---:|---:|
+| XSD does not declare attribute used by tool | 351 | 46.1% |
+| XSD does not allow element under this parent | 220 | 28.9% |
+| XSD does not allow element at all | 37 | 4.9% |
+| attribute value outside XSD's enumeration | 35 | 4.6% |
+| other XML syntax error (recovered tree, parser logged errors) | 35 | 4.6% |
+| invalid boolean (`"True"`/`"False"` vs `"true"`/`"false"`) | 33 | 4.3% |
+| other XSD type / pattern mismatch | 19 | 2.5% |
+| XSD-required attribute missing | 10 | 1.3% |
+| invalid character encoding (non-UTF-8 bytes) | 4 | 0.5% |
+
+**Conclusion:** ~75% of all no-valid tools (B1 + B2 = 571) use
+attributes or elements the public Galaxy XSD does not formally cover —
+a long-standing gap between Galaxy's runtime parser (lenient) and its
+public schema (strict). The remaining ~25% split between minor type
+mismatches (booleans, enums, regex facets) and outright malformed
+input (syntax errors, encoding errors, missing imports). Each category
+is now surfaced in `docs/combined_corpus_stats.md` so future drift is
+immediately visible.
 
 ---
 

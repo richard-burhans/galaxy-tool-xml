@@ -87,7 +87,10 @@ are hand-written and are not exempt.
   regenerate together on a full `corpus_check.py` sweep. Toolshed row
   versions come from `corpus/galaxy-toolshed/manifest.json`, which
   `fetch_toolshed.py` populates by capturing each clone's tip changeset
-  before `.hg/` is removed.
+  before `.hg/` is removed. The combined stats markdown also carries two
+  failure-reason tables (macro-expansion failures, no-valid-profile
+  reasons) categorising every tool whose validity vector is empty —
+  these answer the "are these our bugs?" question at a glance.
 - Both validation and binding are profile-aware: `validate_tool` uses the
   per-release XSD, and `ToolDocument.model()` binds against the model for the
   tool's resolved profile (overridable via `model(version=...)`).

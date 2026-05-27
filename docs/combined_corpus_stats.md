@@ -106,20 +106,49 @@ Rows: declared profile *after macro expansion* (oldest first). Columns: newest v
 | 22.04 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 22.05 | 528 | 0 | 3 | 0 | 1 | 0 | 0 | 1 |
 | 22.09 | 4 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| 23.0 | 299 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 23.00 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 23.0 | 299 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 23.1 | 106 | 1 | 0 | 0 | 0 | 0 | 0 | 0 |
-| 23.2 | 55 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 23.02 | 6 | 0 | 1 | 0 | 0 | 0 | 0 | 0 |
+| 23.2 | 55 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 23.05 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| 24.0 | 120 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 24.00 | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 24.0 | 120 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 24.01 | 15 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 24.1 | 68 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 24.2 | 173 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 25.0 | 190 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 25.1 | 127 | 0 | 0 | 0 | 0 | 0 | 0 | 1 |
 | 26.0 | 7 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+## Macro-expansion failure reasons
+
+Tools whose macros could not be expanded by `galaxy.util.xml_macros` — the post-expansion tree never reaches the XSD. The reason comes from the first `MacroError` returned by the adapter; these are properties of the tool itself (or its `<import>`s), not library bugs. Click a reason to see the failing tools at their upstream source.
+
+| Reason | Tools | % |
+|---|---:|---:|
+| [undefined macro reference in <expand>](corpus_data/failures/undefined-macro-reference-in-expand.md) | 8 | 47.1% |
+| [imported macros.xml file not on disk](corpus_data/failures/imported-macros-xml-file-not-on-disk.md) | 6 | 35.3% |
+| [malformed XML in tool file](corpus_data/failures/malformed-xml-in-tool-file.md) | 3 | 17.6% |
+| **total** | **17** | **100.0%** |
+
+## Tools with no valid vendored profile — reason breakdown
+
+Tools whose validity vector is empty (no vendored XSD accepts them). The reason is derived from the first schema error reported at the tool's declared profile (falling back to the latest profile if none is declared); macro-expansion-failed tools are aggregated under `(macro expansion failed)` — see the section above for their breakdown. Click a reason to see the failing tools at their upstream source.
+
+| Reason | Tools | % |
+|---|---:|---:|
+| [XSD does not declare attribute used by tool](corpus_data/failures/xsd-does-not-declare-attribute-used-by-tool.md) | 351 | 46.1% |
+| [XSD does not allow element under this parent](corpus_data/failures/xsd-does-not-allow-element-under-this-parent.md) | 220 | 28.9% |
+| [XSD does not allow element at all](corpus_data/failures/xsd-does-not-allow-element-at-all.md) | 37 | 4.9% |
+| [attribute value outside XSD's enumeration](corpus_data/failures/attribute-value-outside-xsd-s-enumeration.md) | 35 | 4.6% |
+| [other XML syntax error](corpus_data/failures/other-xml-syntax-error.md) | 35 | 4.6% |
+| [invalid boolean ('True'/'False' vs 'true'/'false')](corpus_data/failures/invalid-boolean-true-false-vs-true-false.md) | 33 | 4.3% |
+| [other XSD type / pattern mismatch](corpus_data/failures/other-xsd-type-pattern-mismatch.md) | 19 | 2.5% |
+| [(macro expansion failed)](corpus_data/failures/macro-expansion-failed.md) | 17 | 2.2% |
+| [XSD-required attribute missing on tool element](corpus_data/failures/xsd-required-attribute-missing-on-tool-element.md) | 10 | 1.3% |
+| [invalid character encoding (non-UTF-8 bytes)](corpus_data/failures/invalid-character-encoding-non-utf-8-bytes.md) | 4 | 0.5% |
+| **total** | **761** | **100.0%** |
 
 ## Macro usage
 

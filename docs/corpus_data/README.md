@@ -32,6 +32,8 @@ The five columns above, plus:
 | `profile_raw` | literal `profile` attribute on the un-expanded tree, or `(none)` |
 | `profile_expanded` | `profile` after macro expansion, or `(none)` / `(expansion failed)` |
 | `newest_valid` | newest vendored profile that validates the tool, or `(none)` |
+| `expansion_failure_reason` | category for the first macro-expansion error when expansion failed; `null` in JSON (empty string in TSV) when the tool's macros expanded cleanly |
+| `no_valid_reason` | category for why no vendored profile accepts the tool when its validity vector is empty; `null` in JSON (empty string in TSV) when at least one profile validates |
 | `valid_<profile>` | one column per vendored profile (`valid_16.10`, `valid_17.01`, …, `valid_26.1`), value `1` if the tool validates against that profile's XSD and `0` otherwise; integers in JSON, `0` / `1` literals in TSV |
 
 The combined artifact records **all occurrences** of each tool — one row
@@ -47,6 +49,17 @@ The vector is **not guaranteed contiguous**: a tool can be valid at
 profile A, invalid at a later profile B, then valid again at C (see
 `docs/decisions.md` §10.3). Downstream consumers should treat each
 column independently rather than assuming a single contiguous range.
+
+## Failure-mode detail pages
+
+Every combined sweep also writes `failures/` (one markdown per
+failure-reason category) plus a `failures/README.md` index. The
+reason cells in the two failure tables of
+`docs/combined_corpus_stats.md` are markdown links into these files;
+each detail page lists the failing tools with a clickable URL into
+their upstream source (github.com, gitlab.com, or the Galaxy
+ToolShed) at the captured version. Tools are deduplicated by sha256
+so the counts match the aggregate stats.
 
 ## Regeneration
 
