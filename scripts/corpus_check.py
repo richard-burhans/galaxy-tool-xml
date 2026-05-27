@@ -108,6 +108,7 @@ _FINE_GRAINED_PROFILE_COLUMNS = (
     "newest_valid",
     "expansion_failure_reason",
     "no_valid_reason",
+    "presence",
 )
 _FAILURE_DETAILS_SUBDIR = "failures"
 # The toolshed's hgweb routes (`/repos/<o>/<n>/file/<rev>/...`) all return
@@ -930,6 +931,136 @@ def _failure_slug(reason: str) -> str:
     return slug or "unknown"
 
 
+def _row_source(repo: object) -> str | None:
+    """Map a row's ``repo`` value to ``"github"`` / ``"toolshed"`` / ``None``.
+
+    Toolshed display names carry ``owner/name``; github display names are
+    the bare clone-directory name. A non-string repo (should not happen in
+    practice but the type system permits it) returns ``None``.
+    """
+    if not isinstance(repo, str):
+        return None
+    return "toolshed" if "/" in repo else "github"
+
+
+def _stamp_presence(rows: list[dict[str, str | int | None]]) -> None:
+    """Set ``presence`` on every row to ``github_only`` / ``toolshed_only`` / ``both``.
+
+    A tool's *logical identity* across sources is its post-expansion
+    ``tool_id``. Build a ``tool_id -> {github, toolshed}`` map from
+    every row (unique + duplicate), then stamp each row in place. Rows
+    whose ``tool_id`` is empty get ``presence = ""`` — a known
+    "couldn't determine" rather than a missing value, matching how the
+    other identity columns surface that edge case.
+
+    Mutates ``rows`` in place; safe to call exactly once per sweep,
+    only in combined mode (per-source artifacts don't carry this
+    column).
+    """
+    by_tool_id: dict[str, set[str]] = {}
+    for row in rows:
+        tool_id = row.get("tool_id")
+        if not isinstance(tool_id, str) or not tool_id:
+            continue
+        source = _row_source(row.get("repo"))
+        if source is None:
+            continue
+        by_tool_id.setdefault(tool_id, set()).add(source)
+    for row in rows:
+        tool_id = row.get("tool_id")
+        if not isinstance(tool_id, str) or not tool_id:
+            row["presence"] = ""
+            continue
+        sources = by_tool_id.get(tool_id, set())
+        if {"github", "toolshed"} <= sources:
+            row["presence"] = "both"
+        elif sources == {"github"}:
+            row["presence"] = "github_only"
+        elif sources == {"toolshed"}:
+            row["presence"] = "toolshed_only"
+        else:
+            row["presence"] = ""
+
+
+def _format_presence_failures(rows: list[dict[str, str | int | None]]) -> list[str]:
+    """Render the ``Failures by source presence`` section for the combined view.
+
+    The two sub-tables — one for github failures, one for toolshed
+    failures — count distinct failing tools after the same
+    first-sha-wins dedup that the failure-detail pages use, so the
+    numbers reconcile with the per-category indexes under
+    ``docs/corpus_data/failures/``. Rows are presence-stamped before
+    this is called; missing/empty ``presence`` (rare) is collapsed into
+    the ``<source>_only`` bucket so totals reconcile.
+    """
+    seen: set[str] = set()
+    unique: list[dict[str, str | int | None]] = []
+    for row in rows:
+        sha = row.get("sha256")
+        if not isinstance(sha, str) or sha in seen:
+            continue
+        seen.add(sha)
+        unique.append(row)
+    failures = [
+        row
+        for row in unique
+        if row.get("expansion_failure_reason") or row.get("no_valid_reason")
+    ]
+    github_failures = [
+        row for row in failures if _row_source(row.get("repo")) == "github"
+    ]
+    toolshed_failures = [
+        row for row in failures if _row_source(row.get("repo")) == "toolshed"
+    ]
+    gh_both = sum(1 for row in github_failures if row.get("presence") == "both")
+    gh_only = len(github_failures) - gh_both
+    ts_both = sum(1 for row in toolshed_failures if row.get("presence") == "both")
+    ts_only = len(toolshed_failures) - ts_both
+
+    def _row(label: str, count: int, total: int) -> str:
+        pct = 100 * count / total if total else 0
+        return f"| {label} | {count} | {pct:.1f}% |"
+
+    lines = [
+        "## Failures by source presence",
+        "",
+        (
+            f"Of the {len(failures)} distinct failing tools (sha256-deduped), "
+            "broken down by whether the tool's logical identity (its "
+            "`tool_id`) also appears in the other corpus. **github sibling** "
+            "means a github row exists with the same `tool_id` (possibly "
+            "different bytes); the `[view]` link in the per-category indexes "
+            "still points at the bytes that actually failed, not at the "
+            "same-named tool elsewhere."
+        ),
+        "",
+        "### Failing on github",
+        "",
+        "| | Tools | % of github failures |",
+        "|---|---:|---:|",
+    ]
+    if github_failures:
+        lines.append(_row("github-only", gh_only, len(github_failures)))
+        lines.append(_row("github + toolshed twin", gh_both, len(github_failures)))
+    else:
+        lines.append("| _(no github failures)_ |  |  |")
+    lines.extend(
+        [
+            "",
+            "### Failing on toolshed",
+            "",
+            "| | Tools | % of toolshed failures |",
+            "|---|---:|---:|",
+        ]
+    )
+    if toolshed_failures:
+        lines.append(_row("toolshed-only", ts_only, len(toolshed_failures)))
+        lines.append(_row("toolshed + github sibling", ts_both, len(toolshed_failures)))
+    else:
+        lines.append("| _(no toolshed failures)_ |  |  |")
+    return lines
+
+
 def _format_reason_table(
     title: str,
     intro: str,
@@ -1009,6 +1140,23 @@ def _write_failure_details(
     counts match the aggregate stats markdown.
     """
     output_dir.mkdir(parents=True, exist_ok=True)
+    # Build the tool_id -> sorted github repos map once, from the full rows list
+    # (including duplicate occurrences). Used to annotate toolshed rows whose
+    # tool_id also exists in a github repo — readers can spot maintained-on-
+    # github siblings at a glance without leaving the failure-detail page.
+    github_siblings_unsorted: dict[str, set[str]] = {}
+    for row in rows:
+        repo = row.get("repo")
+        tool_id = row.get("tool_id")
+        if not isinstance(repo, str) or not isinstance(tool_id, str):
+            continue
+        if "/" in repo:  # toolshed: not a github sibling
+            continue
+        github_siblings_unsorted.setdefault(tool_id, set()).add(repo)
+    github_siblings: dict[str, tuple[str, ...]] = {
+        tool_id: tuple(sorted(repos))
+        for tool_id, repos in github_siblings_unsorted.items()
+    }
     seen: set[str] = set()
     by_reason: dict[str, list[dict[str, str | int | None]]] = {}
     for row in rows:
@@ -1067,8 +1215,17 @@ def _write_failure_details(
             tool_id = str(row["tool_id"])
             url = _tool_source_url(repo, version, path)
             link = f"[view]({url})" if url else "—"
+            repo_cell = repo
+            if (
+                "/" in repo
+                and row.get("presence") == "both"
+                and tool_id in github_siblings
+            ):
+                repo_cell = (
+                    f"{repo} (also in github: {', '.join(github_siblings[tool_id])})"
+                )
             lines.append(
-                f"| {repo} | `{tool_id}` | `{path}` | `{version[:12]}` | {link} |"
+                f"| {repo_cell} | `{tool_id}` | `{path}` | `{version[:12]}` | {link} |"
             )
         (output_dir / f"{slug}.md").write_text(
             "\n".join(lines) + "\n", encoding="utf-8"
@@ -1167,6 +1324,7 @@ def _write_stats(
     source_duplicate_counts: Counter[str],
     expansion_failure_counts: Counter[str],
     no_valid_counts: Counter[str],
+    rows: list[dict[str, str | int | None]] | None = None,
 ) -> None:
     """Write the corpus statistics artifact for one source.
 
@@ -1285,6 +1443,9 @@ def _write_stats(
             )
         )
         lines.append("")
+        if rows is not None:
+            lines.extend(_format_presence_failures(rows))
+            lines.append("")
     lines.extend(
         _format_binary_table("Macro usage", "Uses macros", "Macro-free", macro_counts)
     )
@@ -1438,6 +1599,8 @@ def main(argv: list[str]) -> int:
             data_basename,
         )
     else:
+        if args.source == "combined":
+            _stamp_presence(state.rows)
         _write_stats(
             stats_file=stats_file,
             source=args.source,
@@ -1454,6 +1617,7 @@ def main(argv: list[str]) -> int:
             source_duplicate_counts=state.source_duplicate_counts,
             expansion_failure_counts=state.expansion_failure_counts,
             no_valid_counts=state.no_valid_counts,
+            rows=state.rows if args.source == "combined" else None,
         )
         _write_corpus_data(
             rows=state.rows,

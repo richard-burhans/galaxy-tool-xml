@@ -17,7 +17,9 @@ import scripts.corpus_check as corpus_check
 from scripts.corpus_check import (
     ToolStats,
     _failure_slug,
+    _format_presence_failures,
     _make_row,
+    _stamp_presence,
     _tool_source_url,
     _tsv_safe,
     _write_corpus_data,
@@ -134,7 +136,7 @@ def test_tsv_safe_replaces_tab_newline_cr_with_space() -> None:
 
 def _two_rows() -> list[dict[str, str | int | None]]:
     profiles = available_profiles()
-    return [
+    rows = [
         _row(sha="sha_a", stats=_stats(validity=[True] * len(profiles))),
         _row(
             display_name="other/repo",
@@ -144,6 +146,8 @@ def _two_rows() -> list[dict[str, str | int | None]]:
             stats=_stats(validity=[False] * len(profiles)),
         ),
     ]
+    corpus_check._stamp_presence(rows)
+    return rows
 
 
 @pytest.fixture
@@ -174,7 +178,7 @@ def test_write_corpus_data_combined_includes_validity_flags(
         (isolated_data_dir / "combined_corpus_data.json").read_text(encoding="utf-8")
     )
     profiles = available_profiles()
-    assert len(data[0]) == 10 + len(profiles)
+    assert len(data[0]) == 11 + len(profiles)
     # Row 0 was built with validity=[True, ...]; row 1 with [False, ...].
     for profile in profiles:
         assert data[0][f"valid_{profile}"] == 1
@@ -193,13 +197,13 @@ def test_write_corpus_data_combined_tsv_has_header_plus_one_row_per_record(
         .splitlines()
     )
     profiles = available_profiles()
-    expected_columns = 10 + len(profiles)
+    expected_columns = 11 + len(profiles)
     assert len(lines) == 3  # header + 2 data rows
     assert lines[0].split("\t")[0] == "repo"
     assert len(lines[0].split("\t")) == expected_columns
-    for value in lines[1].split("\t")[10:]:
+    for value in lines[1].split("\t")[11:]:
         assert value == "1"
-    for value in lines[2].split("\t")[10:]:
+    for value in lines[2].split("\t")[11:]:
         assert value == "0"
 
 
@@ -289,7 +293,9 @@ def test_tool_source_url_constructs_github_link() -> None:
     url = _tool_source_url("tools-iuc", "abc123def456", "tools/foo/foo.xml")
     # tools-iuc is in corpus_sources.json pointing at github.com.
     assert url is not None
-    assert url.startswith("https://github.com/galaxyproject/tools-iuc/blob/abc123def456/")
+    assert url.startswith(
+        "https://github.com/galaxyproject/tools-iuc/blob/abc123def456/"
+    )
     assert url.endswith("tools/foo/foo.xml")
 
 
@@ -350,15 +356,143 @@ def test_write_failure_details_writes_index_and_per_reason_files(
     assert "macro-expansion-failed.md" in index
     assert "xsd-does-not-declare-attribute-used-by-tool.md" in index
     # The dedup should leave just one entry under the macro sub-category file.
-    macro_page = (
-        tmp_path / "undefined-macro-reference-in-expand.md"
-    ).read_text(encoding="utf-8")
+    macro_page = (tmp_path / "undefined-macro-reference-in-expand.md").read_text(
+        encoding="utf-8"
+    )
     assert macro_page.count("| richard-burhans/kegalign |") == 1
     # And the same tool appears in the umbrella page (also deduped).
     umbrella_page = (tmp_path / "macro-expansion-failed.md").read_text(encoding="utf-8")
     assert umbrella_page.count("| richard-burhans/kegalign |") == 1
     # The Group B category file got the tools-iuc tool with a github link.
-    xsd_page = (
-        tmp_path / "xsd-does-not-declare-attribute-used-by-tool.md"
-    ).read_text(encoding="utf-8")
+    xsd_page = (tmp_path / "xsd-does-not-declare-attribute-used-by-tool.md").read_text(
+        encoding="utf-8"
+    )
     assert "https://github.com/galaxyproject/tools-iuc/blob/abc123def456" in xsd_page
+
+
+def test_stamp_presence_marks_github_only_toolshed_only_and_both() -> None:
+    profiles = available_profiles()
+    rows: list[dict[str, str | int | None]] = [
+        # tool_id "alpha" exists in github only
+        _row(
+            display_name="tools-iuc",
+            sha="sha_a",
+            stats=_stats(validity=[True] * len(profiles)),
+        ),
+        # tool_id "beta" exists in toolshed only — override tool_id
+        _row(
+            display_name="owner/repo",
+            sha="sha_b",
+            stats=_stats(validity=[True] * len(profiles)),
+        ),
+        # tool_id "kegalign" exists in BOTH (this is the default _stats id)
+        _row(
+            display_name="tools-iuc",
+            sha="sha_c",
+            stats=_stats(validity=[True] * len(profiles)),
+        ),
+        _row(
+            display_name="other/repo",
+            sha="sha_d",
+            stats=_stats(validity=[True] * len(profiles)),
+        ),
+    ]
+    # Make the first two have distinct tool_ids so we exercise *_only.
+    rows[0]["tool_id"] = "alpha"
+    rows[1]["tool_id"] = "beta"
+    _stamp_presence(rows)
+    assert rows[0]["presence"] == "github_only"
+    assert rows[1]["presence"] == "toolshed_only"
+    assert rows[2]["presence"] == "both"
+    assert rows[3]["presence"] == "both"
+
+
+def test_stamp_presence_handles_empty_tool_id() -> None:
+    profiles = available_profiles()
+    rows: list[dict[str, str | int | None]] = [
+        _row(sha="sha_a", stats=_stats(validity=[True] * len(profiles))),
+    ]
+    rows[0]["tool_id"] = ""
+    _stamp_presence(rows)
+    assert rows[0]["presence"] == ""
+
+
+def test_format_presence_failures_emits_two_subtables() -> None:
+    profiles = available_profiles()
+    rows: list[dict[str, str | int | None]] = [
+        # github failure, tool_id seen in github only → github-only
+        _row(
+            display_name="tools-iuc",
+            sha="sha_a",
+            stats=_stats(
+                no_valid_reason="XSD does not declare attribute used by tool",
+                validity=[False] * len(profiles),
+            ),
+        ),
+        # toolshed failure, tool_id NOT seen in github → toolshed-only
+        _row(
+            display_name="owner/repo",
+            sha="sha_b",
+            stats=_stats(
+                no_valid_reason="XSD does not declare attribute used by tool",
+                validity=[False] * len(profiles),
+            ),
+        ),
+        # toolshed failure whose tool_id IS also in github → both
+        _row(
+            display_name="other/repo",
+            sha="sha_c",
+            stats=_stats(
+                no_valid_reason="XSD does not declare attribute used by tool",
+                validity=[False] * len(profiles),
+            ),
+        ),
+        _row(
+            display_name="bgruening-galaxytools",
+            sha="sha_d",
+            stats=_stats(validity=[True] * len(profiles)),
+        ),
+    ]
+    # Give the first two distinct tool_ids so they're github-only / toolshed-only.
+    rows[0]["tool_id"] = "alpha"
+    rows[1]["tool_id"] = "beta"
+    # rows[2] and rows[3] share the default tool_id "kegalign" — present in both.
+    _stamp_presence(rows)
+    output = "\n".join(_format_presence_failures(rows))
+    assert "## Failures by source presence" in output
+    assert "### Failing on github" in output
+    assert "### Failing on toolshed" in output
+    assert "| github-only | 1 |" in output
+    assert "| github + toolshed twin | 0 |" in output
+    assert "| toolshed-only | 1 |" in output
+    assert "| toolshed + github sibling | 1 |" in output
+
+
+def test_write_failure_details_annotates_toolshed_rows_with_github_siblings(
+    tmp_path: Path,
+) -> None:
+    """A toolshed row whose tool_id also exists in github gets `(also in github: …)`."""
+    profiles = available_profiles()
+    rows: list[dict[str, str | int | None]] = [
+        # github tool, same tool_id as the failing toolshed one — provides the sibling
+        _row(
+            display_name="tools-iuc",
+            sha="sha_gh",
+            stats=_stats(validity=[True] * len(profiles)),
+        ),
+        # The failing toolshed tool — shares default tool_id "kegalign"
+        _row(
+            display_name="someone/kegalign",
+            sha="sha_ts",
+            stats=_stats(
+                no_valid_reason="XSD does not declare attribute used by tool",
+                validity=[False] * len(profiles),
+            ),
+        ),
+    ]
+    _stamp_presence(rows)
+    _write_failure_details(rows=rows, output_dir=tmp_path)
+    page = (tmp_path / "xsd-does-not-declare-attribute-used-by-tool.md").read_text(
+        encoding="utf-8"
+    )
+    assert "someone/kegalign (also in github: tools-iuc)" in page

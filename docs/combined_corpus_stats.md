@@ -95,8 +95,8 @@ Rows: declared profile *after macro expansion* (oldest first). Columns: newest v
 | 19.05 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 3 |
 | 19.09 | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 20.01 | 239 | 0 | 3 | 0 | 0 | 0 | 0 | 2 |
-| 20.05 | 229 | 0 | 1 | 0 | 0 | 0 | 0 | 2 |
 | 20.5 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 |
+| 20.05 | 229 | 0 | 1 | 0 | 0 | 0 | 0 | 2 |
 | 20.09 | 78 | 0 | 0 | 0 | 0 | 0 | 0 | 1 |
 | 21.0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 21.01 | 111 | 0 | 1 | 0 | 0 | 0 | 0 | 0 |
@@ -106,16 +106,16 @@ Rows: declared profile *after macro expansion* (oldest first). Columns: newest v
 | 22.04 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 22.05 | 528 | 0 | 3 | 0 | 1 | 0 | 0 | 1 |
 | 22.09 | 4 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| 23.00 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 23.0 | 299 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 23.00 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 23.1 | 106 | 1 | 0 | 0 | 0 | 0 | 0 | 0 |
-| 23.02 | 6 | 0 | 1 | 0 | 0 | 0 | 0 | 0 |
 | 23.2 | 55 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 23.02 | 6 | 0 | 1 | 0 | 0 | 0 | 0 | 0 |
 | 23.05 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| 24.00 | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 24.0 | 120 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| 24.01 | 15 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 24.00 | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 24.1 | 68 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 24.01 | 15 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 24.2 | 173 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 25.0 | 190 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 25.1 | 127 | 0 | 0 | 0 | 0 | 0 | 0 | 1 |
@@ -149,6 +149,24 @@ Tools whose validity vector is empty (no vendored XSD accepts them). The reason 
 | [XSD-required attribute missing on tool element](corpus_data/failures/xsd-required-attribute-missing-on-tool-element.md) | 10 | 1.3% |
 | [invalid character encoding (non-UTF-8 bytes)](corpus_data/failures/invalid-character-encoding-non-utf-8-bytes.md) | 4 | 0.5% |
 | **total** | **761** | **100.0%** |
+
+## Failures by source presence
+
+Of the 761 distinct failing tools (sha256-deduped), broken down by whether the tool's logical identity (its `tool_id`) also appears in the other corpus. **github sibling** means a github row exists with the same `tool_id` (possibly different bytes); the `[view]` link in the per-category indexes still points at the bytes that actually failed, not at the same-named tool elsewhere.
+
+### Failing on github
+
+| | Tools | % of github failures |
+|---|---:|---:|
+| github-only | 40 | 29.6% |
+| github + toolshed twin | 95 | 70.4% |
+
+### Failing on toolshed
+
+| | Tools | % of toolshed failures |
+|---|---:|---:|
+| toolshed-only | 551 | 88.0% |
+| toolshed + github sibling | 75 | 12.0% |
 
 ## Macro usage
 

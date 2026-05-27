@@ -667,6 +667,90 @@ def _run_macro_usage(args: argparse.Namespace) -> None:
     _report_macro_usage(_measure_macro_usage(corpus_root=args.corpus_root))
 
 
+# --- measurement: cross-source-presence -----------------------------------------
+#
+# Justifies the `presence` column in combined_corpus_data.json and the
+# "Failures by source presence" section in combined_corpus_stats.md. Counts
+# how often a tool's logical identity (its `tool_id`) appears in github,
+# toolshed, or both, and how that splits across the failure population.
+
+
+def _measure_cross_source_presence(
+    *, rows: list[dict[str, object]]
+) -> dict[str, object]:
+    """Split the corpus and the failure subset by `presence` bucket."""
+    unique = _unique_by_sha(rows)
+    overall: Counter[str] = Counter()
+    failures: Counter[str] = Counter()
+    for row in unique:
+        presence = row.get("presence")
+        if not isinstance(presence, str) or not presence:
+            continue
+        overall[presence] += 1
+        if row.get("expansion_failure_reason") or row.get("no_valid_reason"):
+            failures[presence] += 1
+    # Source-and-presence cross-tab for the failure population — the same
+    # numbers the "Failures by source presence" stats section reports.
+    failing_rows = [
+        row
+        for row in unique
+        if row.get("expansion_failure_reason") or row.get("no_valid_reason")
+    ]
+
+    def _src(row: dict[str, object]) -> str | None:
+        repo = row.get("repo")
+        if not isinstance(repo, str):
+            return None
+        return "toolshed" if "/" in repo else "github"
+
+    gh_failures = [row for row in failing_rows if _src(row) == "github"]
+    ts_failures = [row for row in failing_rows if _src(row) == "toolshed"]
+    gh_both = sum(1 for row in gh_failures if row.get("presence") == "both")
+    ts_both = sum(1 for row in ts_failures if row.get("presence") == "both")
+    return {
+        "n_unique_tools": len(unique),
+        "n_failing_tools": len(failing_rows),
+        "overall_presence_counts": dict(overall),
+        "failure_presence_counts": dict(failures),
+        "github_failures_total": len(gh_failures),
+        "github_failures_with_toolshed_twin": gh_both,
+        "toolshed_failures_total": len(ts_failures),
+        "toolshed_failures_with_github_sibling": ts_both,
+    }
+
+
+def _report_cross_source_presence(measurement: dict[str, object]) -> None:
+    n_unique = measurement["n_unique_tools"]
+    n_failing = measurement["n_failing_tools"]
+    overall: dict[str, int] = measurement["overall_presence_counts"]  # type: ignore[assignment]
+    failures: dict[str, int] = measurement["failure_presence_counts"]  # type: ignore[assignment]
+    gh_total = measurement["github_failures_total"]
+    gh_both = measurement["github_failures_with_toolshed_twin"]
+    ts_total = measurement["toolshed_failures_total"]
+    ts_both = measurement["toolshed_failures_with_github_sibling"]
+    print("\n=== cross-source-presence ===")
+    print(f"Unique tools: {n_unique}; failing tools: {n_failing}")
+    print("\nOverall presence (keyed on tool_id):")
+    for bucket in ("github_only", "toolshed_only", "both"):
+        count = overall.get(bucket, 0)
+        rate = 100 * count / n_unique if n_unique else 0
+        print(f"  {bucket:<15s} {count:>6d}  ({rate:>5.1f}%)")
+    print("\nFailing-tool presence:")
+    for bucket in ("github_only", "toolshed_only", "both"):
+        count = failures.get(bucket, 0)
+        rate = 100 * count / n_failing if n_failing else 0
+        print(f"  {bucket:<15s} {count:>6d}  ({rate:>5.1f}%)")
+    print("\nFailures × source cross-tab:")
+    print(f"  github failures total:     {gh_total}; with toolshed twin: {gh_both}")
+    print(f"  toolshed failures total:   {ts_total}; with github sibling: {ts_both}")
+
+
+def _run_cross_source_presence(args: argparse.Namespace) -> None:
+    _report_cross_source_presence(
+        _measure_cross_source_presence(rows=_load_combined_data(path=args.data))
+    )
+
+
 # --- measurement: corrections-cutoff --------------------------------------------
 #
 # Justifies the ``_CUTOFF = 0.8`` constant in src/galaxy_tool_xml/corrections.py.
@@ -819,6 +903,7 @@ _MEASUREMENTS: dict[str, Callable[[argparse.Namespace], None]] = {
     "macro-usage": _run_macro_usage,
     "macro-placeholder-profile": _run_macro_placeholder_profile,
     "expansion-failed-ids": _run_expansion_failed_ids,
+    "cross-source-presence": _run_cross_source_presence,
     "lenient-text-fields": _run_lenient_text_fields,
     "corrections-cutoff": _run_corrections_cutoff,
 }

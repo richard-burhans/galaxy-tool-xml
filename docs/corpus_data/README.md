@@ -34,6 +34,7 @@ The five columns above, plus:
 | `newest_valid` | newest vendored profile that validates the tool, or `(none)` |
 | `expansion_failure_reason` | category for the first macro-expansion error when expansion failed; `null` in JSON (empty string in TSV) when the tool's macros expanded cleanly |
 | `no_valid_reason` | category for why no vendored profile accepts the tool when its validity vector is empty; `null` in JSON (empty string in TSV) when at least one profile validates |
+| `presence` | cross-source presence keyed on `tool_id`: `github_only` / `toolshed_only` / `both`, or the empty string when `tool_id` itself is empty. The same value is stamped on every row sharing the same `tool_id`, regardless of which source the row came from. |
 | `valid_<profile>` | one column per vendored profile (`valid_16.10`, `valid_17.01`, …, `valid_26.1`), value `1` if the tool validates against that profile's XSD and `0` otherwise; integers in JSON, `0` / `1` literals in TSV |
 
 The combined artifact records **all occurrences** of each tool — one row

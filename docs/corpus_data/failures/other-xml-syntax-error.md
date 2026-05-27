@@ -36,6 +36,6 @@
 | saml/semweb_tools | `sparql_import` | `sparql_import.xml` | `eee537fd4600` | [view](https://toolshed.g2.bx.psu.edu/view/saml/semweb_tools) |
 | smokbel/filtertabulartags2 | `filtertabulartags` | `filtertabulartags.xml` | `0b0b2cc71143` | [view](https://toolshed.g2.bx.psu.edu/view/smokbel/filtertabulartags2) |
 | tibebe/rejuve_visual_query_builder | `gxit_query_builder` | `gxit_query_builder.xml` | `6a6f0bc1f4dd` | [view](https://toolshed.g2.bx.psu.edu/view/tibebe/rejuve_visual_query_builder) |
-| yjarosz/yjrepo | `cap3` | `cap3/cap3.xml` | `779275dbe824` | [view](https://toolshed.g2.bx.psu.edu/view/yjarosz/yjrepo) |
-| yjarosz/yjrepo | `trimmomatic` | `idba-mt/idba-mt.xml` | `779275dbe824` | [view](https://toolshed.g2.bx.psu.edu/view/yjarosz/yjrepo) |
-| yjarosz/yjrepo | `trimmomatic` | `trimmomatic/trimmomatic.xml` | `779275dbe824` | [view](https://toolshed.g2.bx.psu.edu/view/yjarosz/yjrepo) |
+| yjarosz/yjrepo (also in github: tools-artbio) | `cap3` | `cap3/cap3.xml` | `779275dbe824` | [view](https://toolshed.g2.bx.psu.edu/view/yjarosz/yjrepo) |
+| yjarosz/yjrepo (also in github: fls-galaxy-tools, tools-iuc) | `trimmomatic` | `idba-mt/idba-mt.xml` | `779275dbe824` | [view](https://toolshed.g2.bx.psu.edu/view/yjarosz/yjrepo) |
+| yjarosz/yjrepo (also in github: fls-galaxy-tools, tools-iuc) | `trimmomatic` | `trimmomatic/trimmomatic.xml` | `779275dbe824` | [view](https://toolshed.g2.bx.psu.edu/view/yjarosz/yjrepo) |

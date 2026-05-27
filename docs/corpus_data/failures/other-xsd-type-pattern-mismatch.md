@@ -21,5 +21,5 @@
 | malex/ribopicker | `ribopicker` | `ribopicker.xml` | `2669a5ad3b1b` | [view](https://toolshed.g2.bx.psu.edu/view/malex/ribopicker) |
 | md-anderson-bioinformatics/heat_map_creation | `mda_heatmap_gen` | `mda_heatmap_gen.xml` | `2aa91f21a24e` | [view](https://toolshed.g2.bx.psu.edu/view/md-anderson-bioinformatics/heat_map_creation) |
 | md-anderson-bioinformatics/heat_map_creation_advanced | `mda_advanced_heatmap_gen` | `mda_advanced_heatmap_gen.xml` | `2637090c040c` | [view](https://toolshed.g2.bx.psu.edu/view/md-anderson-bioinformatics/heat_map_creation_advanced) |
-| nilesh/sickle | `sickle` | `sickle.xml` | `dd2ec1b37e96` | [view](https://toolshed.g2.bx.psu.edu/view/nilesh/sickle) |
-| nml/spolpred | `spolpred` | `spolpred.xml` | `d2d1d48c8e3e` | [view](https://toolshed.g2.bx.psu.edu/view/nml/spolpred) |
+| nilesh/sickle (also in github: tools-iuc) | `sickle` | `sickle.xml` | `dd2ec1b37e96` | [view](https://toolshed.g2.bx.psu.edu/view/nilesh/sickle) |
+| nml/spolpred (also in github: phac-nml-galaxy_tools) | `spolpred` | `spolpred.xml` | `d2d1d48c8e3e` | [view](https://toolshed.g2.bx.psu.edu/view/nml/spolpred) |

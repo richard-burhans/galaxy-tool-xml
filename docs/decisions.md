@@ -166,6 +166,8 @@ non-obvious choices, several of them recently revisited.
 | **Tooling: `hg` and `git` binaries via subprocess; `urllib` for the GitHub REST API.** | Each script makes 2–3 calls per repo and the network dominates everything. PyGithub / GitPython / python-hglib would be heavyweight imports with no measurable benefit; the Mercurial Python API is explicitly *not* a stable surface. |
 | **Per-tool failure reasons categorized and surfaced in the combined stats markdown only.** Two new sections — *Macro-expansion failure reasons* (Group A) and *Tools with no valid vendored profile — reason breakdown* (Group A+B) — appear in `docs/combined_corpus_stats.md`. Tool-level reason fields (`expansion_failure_reason`, `no_valid_reason`) live on `ToolStats` but are not exposed in the fine-grained data files. | The aggregate breakdown answers "are these our bugs?" at a glance (the answer is *no* — see §10.4). The combined view is the right place because the breakdown is most informative when deduplicated across sources. Categorization runs only when needed (no-valid tools get one extra `validate_tool` call to pull the first error). |
 | **External links in `docs/corpus_data/failures/*.md` are plain markdown — no HTML anchors with `target="_blank"`.** | github.com's markdown sanitizer strips the `target` attribute from committed `.md` files, so the HTML form renders the same as plain markdown on the public web view (verified 2026-05-27 — change pushed, behavior confirmed, then reverted). The HTML form would still pay off under any non-GitHub renderer (MkDocs / Pages / IDE preview), but the project does not currently ship one, so the noise is unjustified. Revisit if a static-site build is added. |
+| **Combined-only `presence` column on every row** (`github_only` / `toolshed_only` / `both`), keyed by `tool_id`. Stamped post-sweep by `_stamp_presence`. Per-source artifacts do not carry the column (it would be constant). | Surfaces "is this tool also maintained on github?" as first-class data. Match key `tool_id` is what readers care about ("is the same logical tool present?") and is empirically equivalent to `(tool_id, basename)` at the corpus level (both produce 3,629 cross-source matches in the 2026-05-27 sweep — see §10.11). The sha256-based "Sources" Unique/Duplicates table already captures byte-identical presence; `presence` adds the logical-identity view. |
+| **No `[view]` link swap when only the `tool_id` matches.** A toolshed row with a github sibling keeps its `[view]` link pointed at the toolshed bytes; the sibling is surfaced as an *(also in github: …)* annotation on the `Repository` cell instead. | The recorded failure is a property of the toolshed bytes. The github sibling has *different* bytes and may not have the same failure (or may not fail at all); linking there would mislead the reader about what the row is reporting. Annotation gives the cross-reference without lying about provenance. |
 
 ---
 
@@ -472,6 +474,57 @@ The current `0.80` is defensible; a deliberate audit would be needed
 to support a change.
 
 **Reproduced by:** `uv run python scripts/measure.py corrections-cutoff`
+
+### 10.11 Cross-source presence (2026-05-27 combined sweep)
+
+Justifies the `presence` column on every combined-data row and the
+*"Failures by source presence"* section in
+`docs/combined_corpus_stats.md`. Match key is `tool_id` (logical
+identity) — see §6 row on the column.
+
+**Overall presence**, keyed on `tool_id`, across 9,410 unique tools:
+
+| Bucket | Tools | % |
+|---|---:|---:|
+| `github_only`    | 248   | 2.6%  |
+| `toolshed_only`  | 4,401 | 46.8% |
+| `both`           | 4,761 | 50.6% |
+
+**Failing-tool presence**, across the 761 distinct failures:
+
+| Bucket | Tools | % |
+|---|---:|---:|
+| `github_only`    | 40  | 5.3%  |
+| `toolshed_only`  | 551 | 72.4% |
+| `both`           | 170 | 22.3% |
+
+**Failures × source cross-tab** — the same numbers the new stats
+section reports, deduped by sha256 to reconcile with the
+per-category index pages under `docs/corpus_data/failures/`:
+
+| Source | Failures | With sibling in other source |
+|---|---:|---:|
+| github   | 135 | 95 |
+| toolshed | 626 | 75 |
+
+**Match-key choice (sanity check):** the corpus has 3,629 cross-source
+matches under `tool_id` and the *same* 3,629 under
+`(tool_id, basename(path))`. Tightening the key gains nothing at the
+corpus level and gives only 9 fewer matches on the failure subset
+(122 vs 131); the simpler `tool_id` key wins. Byte-identical (`sha256`)
+matching is much stricter — 3,161 across the whole corpus, 43 on the
+failure subset — and is captured separately by the Sources Unique /
+Duplicates table in `docs/combined_corpus_stats.md`.
+
+**Conclusion:** about half the unique-tool population lives in both
+corpora by logical identity. Among the failing population, that share
+drops to 22% — most failing toolshed tools (72%) have no github
+sibling at all and are unlikely to be silently superseded by an
+updated copy elsewhere. The 170 toolshed failures with a github
+sibling are exactly the population a future "is this maintained on
+github?" triage workflow would surface first.
+
+**Reproduced by:** `uv run python scripts/measure.py cross-source-presence`
 
 ---
 

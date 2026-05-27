@@ -6,18 +6,18 @@
 |---|---|---|---|---|
 | AAFC-BICoE-Galaxy | `mothur_otu_hierarchy` | `wrappers/Mothur_Toolsuite/mothur/tools/mothur/otu.hierarchy.xml` | `d99c77e9a44f` | [view](https://github.com/AAFC-BICoE/Galaxy/blob/d99c77e9a44fa25b69c42ca6ad7ae8c402c6debc/wrappers/Mothur_Toolsuite/mothur/tools/mothur/otu.hierarchy.xml) |
 | boris/phylorelatives | `phylorelatives` | `phylorelatives.xml` | `06d6e56e8c2b` | [view](https://toolshed.g2.bx.psu.edu/view/boris/phylorelatives) |
-| cole_easson/assembly | `velvetg` | `velvet-08256557922f/velvetg.xml` | `5adf9db15edc` | [view](https://toolshed.g2.bx.psu.edu/view/cole_easson/assembly) |
+| cole_easson/assembly (also in github: tools-iuc) | `velvetg` | `velvet-08256557922f/velvetg.xml` | `5adf9db15edc` | [view](https://toolshed.g2.bx.psu.edu/view/cole_easson/assembly) |
 | cristian/notos | `CpGoe` | `CpGoe.xml` | `cb8bac9d0d37` | [view](https://toolshed.g2.bx.psu.edu/view/cristian/notos) |
 | danwiththeplan/gsnap | `GSnap` | `GSnap.xml` | `3e165049e517` | [view](https://toolshed.g2.bx.psu.edu/view/danwiththeplan/gsnap) |
 | fls-galaxy-tools | `data_manager_fetch_mothur_reference_data` | `legacy/data_manager_mothur_toolsuite/data_manager/data_manager_fetch_mothur_reference_data.xml` | `e68bd3c872c5` | [view](https://github.com/fls-bioinformatics-core/galaxy-tools/blob/e68bd3c872c5c51bffeba865b27465e2a80a3318/legacy/data_manager_mothur_toolsuite/data_manager/data_manager_fetch_mothur_reference_data.xml) |
 | fls-galaxy-tools | `solid_preprocess_filter_wrapper` | `tools/solid_preprocess_filter/solid_preprocess_filter_wrapper.xml` | `e68bd3c872c5` | [view](https://github.com/fls-bioinformatics-core/galaxy-tools/blob/e68bd3c872c5c51bffeba865b27465e2a80a3318/tools/solid_preprocess_filter/solid_preprocess_filter_wrapper.xml) |
 | fls-galaxy-tools | `motiffinding_weeder2` | `tools/weeder2/weeder2_wrapper.xml` | `e68bd3c872c5` | [view](https://github.com/fls-bioinformatics-core/galaxy-tools/blob/e68bd3c872c5c51bffeba865b27465e2a80a3318/tools/weeder2/weeder2_wrapper.xml) |
 | galaxy-csg | `icqsol_create_shape` | `tools/icqsol_create_shape/icqsol_create_shape.xml` | `f9ccdff76394` | [view](https://github.com/gregvonkuster/galaxy-csg/blob/f9ccdff76394292540207bf0880c766098c5bcdd/tools/icqsol_create_shape/icqsol_create_shape.xml) |
-| geert-vandeweyer/coverage_report | `CoverageReport2` | `CoverageReport.xml` | `576bfc1586f9` | [view](https://toolshed.g2.bx.psu.edu/view/geert-vandeweyer/coverage_report) |
+| geert-vandeweyer/coverage_report (also in github: tools-iuc) | `CoverageReport2` | `CoverageReport.xml` | `576bfc1586f9` | [view](https://toolshed.g2.bx.psu.edu/view/geert-vandeweyer/coverage_report) |
 | geert-vandeweyer/varamplicnv | `VarAmpliCNV_CallCNVs` | `VarAmpliCNV_CallCNVs.xml` | `5c324f9a4e20` | [view](https://toolshed.g2.bx.psu.edu/view/geert-vandeweyer/varamplicnv) |
 | hyungrolee/mgescan | `mgescan` | `mgescan.xml` | `1234e527defa` | [view](https://toolshed.g2.bx.psu.edu/view/hyungrolee/mgescan) |
 | jasper/pathoscope_id | `pathoscope_id` | `PathoID.xml` | `15f6593183bb` | [view](https://toolshed.g2.bx.psu.edu/view/jasper/pathoscope_id) |
-| joachim-jacob/qualimap_suite | `qualimap_bamqc` | `bamqc.xml` | `f6ffb9aa409e` | [view](https://toolshed.g2.bx.psu.edu/view/joachim-jacob/qualimap_suite) |
+| joachim-jacob/qualimap_suite (also in github: tools-iuc) | `qualimap_bamqc` | `bamqc.xml` | `f6ffb9aa409e` | [view](https://toolshed.g2.bx.psu.edu/view/joachim-jacob/qualimap_suite) |
 | marc-wilkins/samifier | `samifier` | `samifier/samifier.xml` | `66ad014e6975` | [view](https://toolshed.g2.bx.psu.edu/view/marc-wilkins/samifier) |
 | phac-nml-galaxy_tools | `bcftools_view` | `tools/bcftools/view/bcftools_view.xml` | `debf8e40aaac` | [view](https://github.com/phac-nml/galaxy_tools/blob/debf8e40aaac7052123fbde91c16e031498ff83c/tools/bcftools/view/bcftools_view.xml) |
 | pieterlukasse/prims_metabolomics2 | `metams_lcms_annotate` | `metaMS/metams_lcms_annotate.xml` | `9f03c8587d6b` | [view](https://toolshed.g2.bx.psu.edu/view/pieterlukasse/prims_metabolomics2) |
