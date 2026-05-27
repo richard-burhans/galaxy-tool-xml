@@ -127,9 +127,9 @@ Tools whose macros could not be expanded by `galaxy.util.xml_macros` — the pos
 
 | Reason | Tools | % |
 |---|---:|---:|
-| <a href="corpus_data/failures/undefined-macro-reference-in-expand.md" target="_blank" rel="noopener noreferrer">undefined macro reference in &lt;expand&gt;</a> | 8 | 47.1% |
-| <a href="corpus_data/failures/imported-macros-xml-file-not-on-disk.md" target="_blank" rel="noopener noreferrer">imported macros.xml file not on disk</a> | 6 | 35.3% |
-| <a href="corpus_data/failures/malformed-xml-in-tool-file.md" target="_blank" rel="noopener noreferrer">malformed XML in tool file</a> | 3 | 17.6% |
+| [undefined macro reference in <expand>](corpus_data/failures/undefined-macro-reference-in-expand.md) | 8 | 47.1% |
+| [imported macros.xml file not on disk](corpus_data/failures/imported-macros-xml-file-not-on-disk.md) | 6 | 35.3% |
+| [malformed XML in tool file](corpus_data/failures/malformed-xml-in-tool-file.md) | 3 | 17.6% |
 | **total** | **17** | **100.0%** |
 
 ## Tools with no valid vendored profile — reason breakdown
@@ -138,16 +138,16 @@ Tools whose validity vector is empty (no vendored XSD accepts them). The reason 
 
 | Reason | Tools | % |
 |---|---:|---:|
-| <a href="corpus_data/failures/xsd-does-not-declare-attribute-used-by-tool.md" target="_blank" rel="noopener noreferrer">XSD does not declare attribute used by tool</a> | 351 | 46.1% |
-| <a href="corpus_data/failures/xsd-does-not-allow-element-under-this-parent.md" target="_blank" rel="noopener noreferrer">XSD does not allow element under this parent</a> | 220 | 28.9% |
-| <a href="corpus_data/failures/xsd-does-not-allow-element-at-all.md" target="_blank" rel="noopener noreferrer">XSD does not allow element at all</a> | 37 | 4.9% |
-| <a href="corpus_data/failures/attribute-value-outside-xsd-s-enumeration.md" target="_blank" rel="noopener noreferrer">attribute value outside XSD's enumeration</a> | 35 | 4.6% |
-| <a href="corpus_data/failures/other-xml-syntax-error.md" target="_blank" rel="noopener noreferrer">other XML syntax error</a> | 35 | 4.6% |
-| <a href="corpus_data/failures/invalid-boolean-true-false-vs-true-false.md" target="_blank" rel="noopener noreferrer">invalid boolean ('True'/'False' vs 'true'/'false')</a> | 33 | 4.3% |
-| <a href="corpus_data/failures/other-xsd-type-pattern-mismatch.md" target="_blank" rel="noopener noreferrer">other XSD type / pattern mismatch</a> | 19 | 2.5% |
-| <a href="corpus_data/failures/macro-expansion-failed.md" target="_blank" rel="noopener noreferrer">(macro expansion failed)</a> | 17 | 2.2% |
-| <a href="corpus_data/failures/xsd-required-attribute-missing-on-tool-element.md" target="_blank" rel="noopener noreferrer">XSD-required attribute missing on tool element</a> | 10 | 1.3% |
-| <a href="corpus_data/failures/invalid-character-encoding-non-utf-8-bytes.md" target="_blank" rel="noopener noreferrer">invalid character encoding (non-UTF-8 bytes)</a> | 4 | 0.5% |
+| [XSD does not declare attribute used by tool](corpus_data/failures/xsd-does-not-declare-attribute-used-by-tool.md) | 351 | 46.1% |
+| [XSD does not allow element under this parent](corpus_data/failures/xsd-does-not-allow-element-under-this-parent.md) | 220 | 28.9% |
+| [XSD does not allow element at all](corpus_data/failures/xsd-does-not-allow-element-at-all.md) | 37 | 4.9% |
+| [attribute value outside XSD's enumeration](corpus_data/failures/attribute-value-outside-xsd-s-enumeration.md) | 35 | 4.6% |
+| [other XML syntax error](corpus_data/failures/other-xml-syntax-error.md) | 35 | 4.6% |
+| [invalid boolean ('True'/'False' vs 'true'/'false')](corpus_data/failures/invalid-boolean-true-false-vs-true-false.md) | 33 | 4.3% |
+| [other XSD type / pattern mismatch](corpus_data/failures/other-xsd-type-pattern-mismatch.md) | 19 | 2.5% |
+| [(macro expansion failed)](corpus_data/failures/macro-expansion-failed.md) | 17 | 2.2% |
+| [XSD-required attribute missing on tool element](corpus_data/failures/xsd-required-attribute-missing-on-tool-element.md) | 10 | 1.3% |
+| [invalid character encoding (non-UTF-8 bytes)](corpus_data/failures/invalid-character-encoding-non-utf-8-bytes.md) | 4 | 0.5% |
 | **total** | **761** | **100.0%** |
 
 ## Macro usage
