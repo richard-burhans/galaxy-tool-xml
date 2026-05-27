@@ -43,7 +43,7 @@ def _run_xsdata(version: str, *, models_dir: Path) -> None:
     """Generate one version's model package as ``models_dir/v{slug}/``.
 
     Runs xsdata in the current process — only ever called inside the dedicated
-    subprocess spawned by ``_generate_one``, because xsdata caches its resolved
+    subprocess spawned by ``generate_one``, because xsdata caches its resolved
     output path process-wide. xsdata writes into a throwaway directory; only the
     leaf package is copied into ``models_dir``, so hand-written files alongside
     it (``__init__.py``, ``registry.py``) are never touched.
@@ -68,7 +68,7 @@ def _run_xsdata(version: str, *, models_dir: Path) -> None:
         shutil.copytree(generated, target)
 
 
-def _generate_one(version: str, *, models_dir: Path) -> None:
+def generate_one(version: str, *, models_dir: Path) -> None:
     """Generate one version's model package in a fresh subprocess."""
     pythonpath = os.pathsep.join(
         part for part in (str(_SRC_DIR), os.environ.get("PYTHONPATH", "")) if part
@@ -119,7 +119,10 @@ def regenerate_all_models(*, force: bool = False) -> None:
         return
     workers = min(os.cpu_count() or 4, 8)
     with ThreadPoolExecutor(max_workers=workers) as pool:
-        tuple(pool.map(partial(_generate_one, models_dir=_MODELS_DIR), versions))
+        # Iterate to consume — pool.map is lazy and exceptions from any
+        # worker surface here; no need to allocate a container we throw away.
+        for _ in pool.map(partial(generate_one, models_dir=_MODELS_DIR), versions):
+            pass
     _write_any_tool(versions)
 
 

@@ -135,11 +135,25 @@ def download_xsd(branch: str) -> tuple[str, bytes] | None:
     return None
 
 
-def load_manifest() -> dict[str, object]:
-    """Load ``manifest.json`` if it exists, else return an empty manifest."""
-    if _MANIFEST_PATH.exists():
-        return json.loads(_MANIFEST_PATH.read_text(encoding="utf-8"))
-    return {"latest": None, "schemas": {}}
+def load_existing_schemas() -> dict[str, dict[str, str]]:
+    """Load the ``schemas`` section of ``manifest.json``, or ``{}``.
+
+    The ``latest`` key in the on-disk manifest is denormalized from
+    ``schemas`` at write time, so the read path only consumes the
+    per-version entries. Returning the schemas dict directly avoids the
+    ``object``-typed envelope the previous shape forced on callers.
+    """
+    if not _MANIFEST_PATH.exists():
+        return {}
+    manifest = json.loads(_MANIFEST_PATH.read_text(encoding="utf-8"))
+    if not isinstance(manifest, dict):
+        return {}
+    schemas = manifest.get("schemas")
+    if not isinstance(schemas, dict):
+        return {}
+    return {
+        key: dict(value) for key, value in schemas.items() if isinstance(value, dict)
+    }
 
 
 def write_manifest(schemas: dict[str, dict[str, str]]) -> None:
@@ -213,8 +227,7 @@ def main() -> int:
     args = parser.parse_args()
 
     _SCHEMA_DIR.mkdir(parents=True, exist_ok=True)
-    existing = load_manifest()
-    existing_schemas: dict[str, dict[str, str]] = dict(existing.get("schemas", {}))  # type: ignore[arg-type]
+    existing_schemas = load_existing_schemas()
 
     branches: list[dict[str, str]] | None
     try:

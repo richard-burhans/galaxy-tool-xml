@@ -36,7 +36,7 @@ The repo directory, the distribution, and the CLI command are all
 truth**, faithfully preserving CDATA, comments, and attribute order.
 `binding.py` parses (`load_tool`, `parse_tool`), validates (`validate_tool`), and
 finds a tool's newest valid profile (`newest_valid_profile`). `profiles.py`
-resolves a tool's `profile` to one of the ~27 vendored per-release XSDs.
+resolves a tool's `profile` to one of the ~28 vendored per-release XSDs.
 `macros.py` handles Galaxy macros and is the sole `galaxy-util` adapter.
 `corrections.py` suggests near-miss typo fixes. `models/` holds an
 xsdata-generated read-only typed model per vendored schema version, generated at
@@ -44,7 +44,10 @@ build time by `_codegen.py` and reached via `ToolDocument.model()`;
 `models/registry.py` resolves a version to its model.
 
 The public API is the prose-declared list in `README.md`; everything else is
-private and may change.
+private and may change. For the rationale behind each architectural choice
+(profile-aware validation, the lxml-as-source-of-truth contract, the macro
+expansion adapter, etc.) plus assumptions about the Galaxy ecosystem and
+testing-derived data, see `docs/decisions.md`.
 
 ## Coding standards
 
@@ -79,6 +82,12 @@ are hand-written and are not exempt.
 - `schema/` holds vendored XSDs downloaded once by `scripts/fetch_schemas.py`;
   re-running is additive, `--force` re-downloads. `manifest.json` and
   `PROVENANCE.md` are committed alongside the XSDs.
+- `docs/corpus_data/` holds the fine-grained per-tool data (JSON + TSV)
+  emitted alongside the aggregate `docs/*_corpus_stats.md` artifacts; both
+  regenerate together on a full `corpus_check.py` sweep. Toolshed row
+  versions come from `corpus/galaxy-toolshed/manifest.json`, which
+  `fetch_toolshed.py` populates by capturing each clone's tip changeset
+  before `.hg/` is removed.
 - Both validation and binding are profile-aware: `validate_tool` uses the
   per-release XSD, and `ToolDocument.model()` binds against the model for the
   tool's resolved profile (overridable via `model(version=...)`).

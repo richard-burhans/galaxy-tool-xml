@@ -12,12 +12,12 @@ from pathlib import Path
 
 import pytest
 from scripts.corpus_check import (
-    _check_immutable,
-    _check_macro_handling,
-    _check_model,
-    _check_newest_valid_profile,
-    _check_parse_load_agree,
-    _check_roundtrip,
+    check_immutable,
+    check_macro_handling,
+    check_model,
+    check_newest_valid_profile,
+    check_parse_load_agree,
+    check_roundtrip,
     validity_vector,
 )
 
@@ -31,11 +31,11 @@ def test_retained_tool_holds_every_invariant(tool: Path) -> None:
     document = parse_tool(tool).document
     assert document is not None and document.root.tag == "tool"
     for category, detail in (
-        _check_immutable(document),
-        _check_roundtrip(document),
-        _check_model(document),
-        _check_parse_load_agree(tool),
-        _check_macro_handling(tool, document),
-        _check_newest_valid_profile(tool, validity_vector(tool)),
+        check_immutable(document),
+        check_roundtrip(document),
+        check_model(document),
+        check_parse_load_agree(tool),
+        check_macro_handling(tool, document),
+        check_newest_valid_profile(tool, validity_vector(tool)),
     ):
         assert category == "ok", f"{tool.parent.name}: {category} — {detail}"

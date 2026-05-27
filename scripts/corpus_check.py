@@ -53,13 +53,14 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import logging
 import shutil
 import subprocess
 import sys
 import traceback
 from collections import Counter
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 from functools import cache
 from pathlib import Path
@@ -78,19 +79,31 @@ from galaxy_tool_xml.document import ToolDocument
 from galaxy_tool_xml.macros import expand_from_path, has_macros
 from galaxy_tool_xml.profiles import available_profiles
 
+logger = logging.getLogger("corpus_check")
+
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 _CORPUS_ROOT = _REPO_ROOT / "corpus"
 _TOOLSHED_ROOT = _CORPUS_ROOT / "galaxy-toolshed"
+_TOOLSHED_MANIFEST = _TOOLSHED_ROOT / "manifest.json"
 _REGRESSIONS = _REPO_ROOT / "tests" / "data" / "regressions"
 _STATS_FILES = {
     "github": _REPO_ROOT / "docs" / "corpus_stats.md",
     "toolshed": _REPO_ROOT / "docs" / "toolshed_corpus_stats.md",
     "combined": _REPO_ROOT / "docs" / "combined_corpus_stats.md",
 }
+_CORPUS_DATA_DIR = _REPO_ROOT / "docs" / "corpus_data"
+_CORPUS_DATA_BASENAMES = {
+    "github": "corpus_data",
+    "toolshed": "toolshed_corpus_data",
+    "combined": "combined_corpus_data",
+}
+_FINE_GRAINED_BASE_COLUMNS = ("repo", "version", "path", "tool_id", "sha256")
+_FINE_GRAINED_PROFILE_COLUMNS = ("profile_raw", "profile_expanded", "newest_valid")
 _SOURCES = ("github", "toolshed", "combined")
 _COMBINED_SUB_SOURCES = ("github", "toolshed")
 _PROFILE_NONE = "(none)"
 _PROFILE_EXPANSION_FAILED = "(expansion failed)"
+_UNKNOWN = "unknown"
 
 
 @dataclass
@@ -102,11 +115,16 @@ class ToolStats:
     macro tokens like ``@PROFILE@``). ``profile_expanded`` is the attribute
     after macros are expanded, which is what Galaxy actually validates
     against; this is the field that informs design decisions about profiles.
+    ``tool_id`` is the ``@id`` attribute after macro expansion, falling back
+    to the raw ``@id`` (or the empty string in the rare case it's missing) —
+    it is the tool's logical identity, distinct from its file path.
     """
 
     profile_raw: str  # literal attribute, or _PROFILE_NONE
     profile_expanded: str  # post-expansion, _PROFILE_NONE, or _PROFILE_EXPANSION_FAILED
+    tool_id: str  # post-expansion @id, or raw @id on expansion failure
     newest_valid: str  # newest validating profile, or _PROFILE_NONE
+    validity: list[bool]  # one entry per available_profiles(), oldest first
     has_macros: bool
     contiguous: bool
 
@@ -132,9 +150,9 @@ def _clone_repo(name: str, url: str) -> Path | None:
     """Shallow-clone a repository into the corpus, or reuse / skip it."""
     dest = _CORPUS_ROOT / name
     if dest.exists():
-        print(f"using existing clone: {name}")
+        logger.info("using existing clone: %s", name)
         return dest
-    print(f"cloning {url} ...")
+    logger.info("cloning %s ...", url)
     result = subprocess.run(
         ["git", "clone", "--depth", "1", url, str(dest)],
         capture_output=True,
@@ -142,10 +160,7 @@ def _clone_repo(name: str, url: str) -> Path | None:
         check=False,
     )
     if result.returncode != 0:
-        print(
-            f"  SKIPPED {name}: clone failed — {result.stderr.strip()}",
-            file=sys.stderr,
-        )
+        logger.warning("SKIPPED %s: clone failed — %s", name, result.stderr.strip())
         return None
     return dest
 
@@ -179,23 +194,61 @@ def _iter_github_sources(
         yield "github", name, repo_dir, _corpus_commit(repo_dir)
 
 
+@cache
+def _toolshed_manifest() -> dict[str, str]:
+    """Return ``owner/name -> short changeset`` from the toolshed manifest.
+
+    ``scripts/fetch_toolshed.py`` writes ``manifest.json`` next to the
+    per-owner clones with the tip changeset captured before ``.hg/`` is
+    removed. An older corpus fetched before that change has no manifest;
+    we log one warning, return ``{}``, and ``_iter_toolshed_sources``
+    falls back to ``_UNKNOWN`` per repo so the sweep still runs.
+    """
+    if not _TOOLSHED_MANIFEST.exists():
+        logger.warning(
+            "no toolshed manifest at %s; toolshed versions will be %r. "
+            "Re-run scripts/fetch_toolshed.py to populate it.",
+            _TOOLSHED_MANIFEST.relative_to(_REPO_ROOT),
+            _UNKNOWN,
+        )
+        return {}
+    raw = json.loads(_TOOLSHED_MANIFEST.read_text(encoding="utf-8"))
+    if not isinstance(raw, dict):
+        return {}
+    repos = raw.get("repositories")
+    if not isinstance(repos, dict):
+        return {}
+    result: dict[str, str] = {}
+    for key, entry in repos.items():
+        if not isinstance(entry, dict):
+            continue
+        changeset = entry.get("changeset")
+        if isinstance(changeset, str) and changeset:
+            result[key] = changeset
+    return result
+
+
 def _iter_toolshed_sources() -> Iterable[tuple[str, str, Path, str]]:
-    """Yield ``("toolshed", "<owner>/<name>", repo_dir, "latest")`` per repo.
+    """Yield ``("toolshed", "<owner>/<name>", repo_dir, changeset)`` per repo.
 
     Walks the per-owner ``<owner>/<name>`` layout that
     ``scripts/fetch_toolshed.py`` produces under ``corpus/galaxy-toolshed/``;
-    each directory holds only the latest revision's files. Callers must
-    LBYL-check ``_TOOLSHED_ROOT.exists()`` before iterating — ``iterdir``
-    would otherwise raise ``FileNotFoundError`` and "missing corpus" would
-    look the same as "empty corpus".
+    each directory holds only the latest revision's files. The changeset
+    comes from the toolshed manifest (``_toolshed_manifest``) and falls
+    back to ``_UNKNOWN`` for clones fetched before the manifest existed.
+    Callers must LBYL-check ``_TOOLSHED_ROOT.exists()`` before iterating
+    — ``iterdir`` would otherwise raise ``FileNotFoundError`` and
+    "missing corpus" would look the same as "empty corpus".
     """
+    manifest = _toolshed_manifest()
     for owner_dir in sorted(_TOOLSHED_ROOT.iterdir()):
         if not owner_dir.is_dir():
             continue
         for repo_dir in sorted(owner_dir.iterdir()):
             if not repo_dir.is_dir():
                 continue
-            yield "toolshed", f"{owner_dir.name}/{repo_dir.name}", repo_dir, "latest"
+            key = f"{owner_dir.name}/{repo_dir.name}"
+            yield "toolshed", key, repo_dir, manifest.get(key, _UNKNOWN)
 
 
 def _iter_sources(
@@ -226,7 +279,7 @@ def _iter_sources(
 # through the very same battery.
 
 
-def _check_immutable(document: ToolDocument) -> tuple[str, str]:
+def check_immutable(document: ToolDocument) -> tuple[str, str]:
     """The document tree must survive model / correction / validation intact."""
     before = etree.tostring(document.tree)
     document.model()
@@ -237,7 +290,7 @@ def _check_immutable(document: ToolDocument) -> tuple[str, str]:
     return "ok", ""
 
 
-def _check_roundtrip(document: ToolDocument) -> tuple[str, str]:
+def check_roundtrip(document: ToolDocument) -> tuple[str, str]:
     """Serialising the document tree must be idempotent — CDATA/comments kept.
 
     The re-parse uses ``recover=True`` to match the initial parse: real-world
@@ -254,7 +307,7 @@ def _check_roundtrip(document: ToolDocument) -> tuple[str, str]:
     return "ok", ""
 
 
-def _check_model(document: ToolDocument) -> tuple[str, str]:
+def check_model(document: ToolDocument) -> tuple[str, str]:
     """A root attribute present in the tree must match the bound model.
 
     An attribute absent from the tree is skipped: xsdata applies the schema
@@ -274,7 +327,7 @@ def _check_model(document: ToolDocument) -> tuple[str, str]:
     return "ok", ""
 
 
-def _check_parse_load_agree(path: Path) -> tuple[str, str]:
+def check_parse_load_agree(path: Path) -> tuple[str, str]:
     """``parse_tool().well_formed`` must agree with whether ``load_tool`` raises."""
     well_formed = parse_tool(path).well_formed
     try:
@@ -290,7 +343,7 @@ def _check_parse_load_agree(path: Path) -> tuple[str, str]:
     return "ok", ""
 
 
-def _check_macro_handling(path: Path, document: ToolDocument) -> tuple[str, str]:
+def check_macro_handling(path: Path, document: ToolDocument) -> tuple[str, str]:
     """A macro-free tool must validate identically under every macro_handling."""
     if has_macros(document.root):
         return "ok", ""
@@ -312,7 +365,7 @@ def validity_vector(path: Path) -> list[bool]:
     ]
 
 
-def _check_newest_valid_profile(path: Path, vector: list[bool]) -> tuple[str, str]:
+def check_newest_valid_profile(path: Path, vector: list[bool]) -> tuple[str, str]:
     """``newest_valid_profile`` must return the newest profile that validates."""
     profiles = available_profiles()
     expected = next(
@@ -337,47 +390,97 @@ def is_contiguous(vector: list[bool]) -> bool:
     return all(vector[first : last + 1])
 
 
-def _post_expansion_profile(
+def _expanded_attrs(
     path: Path, document: ToolDocument, *, has_macros_flag: bool
-) -> str:
-    """Return the tool's ``profile`` attribute after macro expansion.
+) -> tuple[str, str]:
+    """Return ``(profile, tool_id)`` after macro expansion.
 
-    For macro-free tools, expansion is a no-op and the raw attribute is
-    returned. For macro-using tools, the tool is expanded from disk and the
-    profile is read from the expanded tree; ``_PROFILE_EXPANSION_FAILED`` is
-    returned when expansion fails (in which case the raw attribute is
-    typically a macro token like ``@PROFILE@`` that conveys no version).
+    For macro-free tools, expansion is a no-op and the raw attributes are
+    returned. For macro-using tools, the tool is expanded from disk **once**
+    and both attributes are read from the expanded tree, so adding
+    ``tool_id`` here costs no extra expansion. ``profile`` becomes
+    ``_PROFILE_EXPANSION_FAILED`` when expansion fails; ``tool_id`` then
+    falls back to the raw ``@id`` (typically a macro-token string like
+    ``bcftools_@EXECUTABLE@``, more informative than an empty string).
     """
+    raw_id = document.root.get("id") or ""
     if not has_macros_flag:
-        return document.root.get("profile") or _PROFILE_NONE
-    # _errors discarded here on purpose: this function's sole job is profile
-    # detection, and any macro-expansion errors surface separately via
-    # _check_macro_handling and validate_tool's own macro_errors.
+        return document.root.get("profile") or _PROFILE_NONE, raw_id
+    # _errors discarded here on purpose: this function's sole job is
+    # attribute detection, and any macro-expansion errors surface
+    # separately via check_macro_handling and validate_tool's own
+    # macro_errors.
     expanded, _errors = expand_from_path(path)
     if expanded is None:
-        return _PROFILE_EXPANSION_FAILED
-    return expanded.getroot().get("profile") or _PROFILE_NONE
+        return _PROFILE_EXPANSION_FAILED, raw_id
+    expanded_root = expanded.getroot()
+    return (
+        expanded_root.get("profile") or _PROFILE_NONE,
+        expanded_root.get("id") or raw_id,
+    )
 
 
-def _is_duplicate(
-    path: Path,
-    source_label: str,
-    *,
-    seen_hashes: set[str],
-    duplicate_counts: Counter[str],
-) -> bool:
-    """Hash ``path``'s bytes; return ``True`` (and count) if already seen.
+@dataclass
+class _SweepState:
+    """Mutable bookkeeping shared across one ``main`` invocation's path loop.
 
-    Combined-mode dedup gate. Returns ``False`` for first occurrences
-    (recording the hash so later occurrences dedupe) and ``True`` for
-    repeats (incrementing the per-source duplicate counter).
+    Bundling the dozen-plus counters / sets / lists into a single struct
+    keeps ``_process_path`` to one ``state`` parameter (so the inner loop
+    body in ``main`` stays shallow) and makes the dependency surface
+    explicit instead of an implicit set of closures.
     """
-    content_hash = hashlib.sha256(path.read_bytes()).hexdigest()
-    if content_hash in seen_hashes:
-        duplicate_counts[source_label] += 1
-        return True
-    seen_hashes.add(content_hash)
-    return False
+
+    seen_hashes: set[str] = field(default_factory=set)
+    sha_to_stats: dict[str, ToolStats] = field(default_factory=dict)
+    rows: list[dict[str, str | int]] = field(default_factory=list)
+    declared_raw_counts: Counter[str] = field(default_factory=Counter)
+    declared_expanded_counts: Counter[str] = field(default_factory=Counter)
+    newest_valid_counts: Counter[str] = field(default_factory=Counter)
+    crosstab: Counter[tuple[str, str]] = field(default_factory=Counter)
+    macro_counts: Counter[bool] = field(default_factory=Counter)
+    contiguity_counts: Counter[bool] = field(default_factory=Counter)
+    source_unique_counts: Counter[str] = field(default_factory=Counter)
+    source_duplicate_counts: Counter[str] = field(default_factory=Counter)
+    signatures: Counter[str] = field(default_factory=Counter)
+    retained_signatures: set[str] = field(default_factory=set)
+    retained: list[tuple[str, str, Path, str, str]] = field(default_factory=list)
+
+
+def _validity_column(profile: str) -> str:
+    """Column name for the per-profile validity flag (e.g. ``valid_26.1``)."""
+    return f"valid_{profile}"
+
+
+def _make_row(
+    *,
+    display_name: str,
+    version: str,
+    path: Path,
+    repo_dir: Path,
+    sha: str,
+    stats: ToolStats,
+) -> dict[str, str | int]:
+    """Construct one fine-grained data row from a tool's stats.
+
+    Every row carries the full combined-schema columns (identifying
+    fields, the three profile fields, and one ``valid_<profile>`` flag
+    per vendored profile); the per-source emitter drops the
+    profile-derived columns when it writes a single-source artifact.
+    Keeping one dict shape avoids near-identical builders.
+    """
+    row: dict[str, str | int] = {
+        "repo": display_name,
+        "version": version,
+        "path": str(path.relative_to(repo_dir)),
+        "tool_id": stats.tool_id,
+        "sha256": sha,
+        "profile_raw": stats.profile_raw,
+        "profile_expanded": stats.profile_expanded,
+        "newest_valid": stats.newest_valid,
+    }
+    for profile, ok in zip(available_profiles(), stats.validity, strict=True):
+        row[_validity_column(profile)] = 1 if ok else 0
+    return row
 
 
 def _exercise(
@@ -413,24 +516,27 @@ def _exercise(
         contiguous = is_contiguous(vector)
         if collect_stats:
             has_macros_flag = has_macros(document.root)
+            profile_expanded, tool_id = _expanded_attrs(
+                path, document, has_macros_flag=has_macros_flag
+            )
             stats: ToolStats | None = ToolStats(
                 profile_raw=document.root.get("profile") or _PROFILE_NONE,
-                profile_expanded=_post_expansion_profile(
-                    path, document, has_macros_flag=has_macros_flag
-                ),
+                profile_expanded=profile_expanded,
+                tool_id=tool_id,
                 newest_valid=newest_valid,
+                validity=vector,
                 has_macros=has_macros_flag,
                 contiguous=contiguous,
             )
         else:
             stats = None
         for category, detail in (
-            _check_immutable(document),
-            _check_roundtrip(document),
-            _check_model(document),
-            _check_parse_load_agree(path),
-            _check_macro_handling(path, document),
-            _check_newest_valid_profile(path, vector),
+            check_immutable(document),
+            check_roundtrip(document),
+            check_model(document),
+            check_parse_load_agree(path),
+            check_macro_handling(path, document),
+            check_newest_valid_profile(path, vector),
         ):
             if category != "ok":
                 return category, detail, category, stats
@@ -440,6 +546,92 @@ def _exercise(
     except Exception as exc:  # noqa: BLE001 — diagnostic sweep: every crash is a finding
         return "crash", traceback.format_exc(), _signature(exc), None
     return "ok", "", "", stats
+
+
+def _process_path(
+    path: Path,
+    *,
+    source_label: str,
+    display_name: str,
+    repo_dir: Path,
+    version: str,
+    state: _SweepState,
+    combined: bool,
+    collect_stats: bool,
+    need_sha: bool,
+) -> bool:
+    """Sweep one XML file and update ``state``; return ``True`` if it counts.
+
+    The per-path body of ``main``'s loop, extracted so the main function
+    itself stays shallow. Returns ``True`` when the file was a kept
+    ``<tool>`` (so the caller increments its tools / per-repo counters),
+    or ``False`` when it was a duplicate of an already-seen sha, a
+    non-file path, or a non-tool XML.
+    """
+    if not path.is_file():
+        return False
+    sha = hashlib.sha256(path.read_bytes()).hexdigest() if need_sha else ""
+    if combined and sha in state.seen_hashes:
+        state.source_duplicate_counts[source_label] += 1
+        cached = state.sha_to_stats.get(sha)
+        if cached is not None:
+            state.rows.append(
+                _make_row(
+                    display_name=display_name,
+                    version=version,
+                    path=path,
+                    repo_dir=repo_dir,
+                    sha=sha,
+                    stats=cached,
+                )
+            )
+        return False
+    if combined:
+        state.seen_hashes.add(sha)
+    status, detail, signature, stats = _exercise(path, collect_stats=collect_stats)
+    if status == "skip":
+        return False
+    state.source_unique_counts[source_label] += 1
+    if stats is not None:
+        state.declared_raw_counts[stats.profile_raw] += 1
+        state.declared_expanded_counts[stats.profile_expanded] += 1
+        state.newest_valid_counts[stats.newest_valid] += 1
+        state.crosstab[(stats.profile_expanded, stats.newest_valid)] += 1
+        state.macro_counts[stats.has_macros] += 1
+        state.contiguity_counts[stats.contiguous] += 1
+        if combined:
+            state.sha_to_stats[sha] = stats
+        state.rows.append(
+            _make_row(
+                display_name=display_name,
+                version=version,
+                path=path,
+                repo_dir=repo_dir,
+                sha=sha,
+                stats=stats,
+            )
+        )
+    if status == "ok":
+        return True
+    state.signatures[signature] += 1
+    if signature in state.retained_signatures:
+        return True
+    state.retained_signatures.add(signature)
+    # display_name may carry a '/' for toolshed (owner/name); sanitize so
+    # retained fixture directories stay flat.
+    dest = _retain(path, display_name.replace("/", "__"))
+    relative = path.relative_to(repo_dir)
+    state.retained.append((dest.name, display_name, relative, version, signature))
+    logger.warning(
+        "%s [%s] %s\n  %s\n  retained -> %s\n  %s",
+        status.upper(),
+        display_name,
+        signature,
+        relative,
+        dest,
+        detail.strip().replace("\n", "\n  "),
+    )
+    return True
 
 
 def _signature(exc: BaseException) -> str:
@@ -626,6 +818,58 @@ def _format_binary_table(
     return lines
 
 
+def _tsv_safe(value: str) -> str:
+    """Replace tab/newline/CR with a single space — defensive TSV escape.
+
+    Real corpus tools don't contain these characters in any of the columns
+    we emit, but TSV has no quoting standard, so any one of them would
+    silently break a downstream parser. The sanitisation is expected to
+    be a no-op on every row.
+    """
+    return value.replace("\t", " ").replace("\n", " ").replace("\r", " ")
+
+
+def _write_corpus_data(
+    *,
+    rows: list[dict[str, str | int]],
+    source: str,
+    include_profile_columns: bool,
+) -> None:
+    """Write the fine-grained per-tool data as both JSON and TSV.
+
+    The per-source artifacts carry only the identifying columns
+    (``repo, version, path, tool_id, sha256``); the combined artifact
+    appends the three profile columns
+    (``profile_raw, profile_expanded, newest_valid``) plus one
+    ``valid_<profile>`` column per vendored profile (``0`` / ``1``,
+    oldest profile first). JSON: an array of objects with the schema's
+    column order preserved; validity flags are JSON integers. TSV: a
+    header row plus one row per tool, UTF-8, LF endings, with tab /
+    newline / CR replaced by a single space in field values.
+    """
+    columns: tuple[str, ...] = _FINE_GRAINED_BASE_COLUMNS
+    if include_profile_columns:
+        columns = (
+            columns
+            + _FINE_GRAINED_PROFILE_COLUMNS
+            + tuple(_validity_column(profile) for profile in available_profiles())
+        )
+    _CORPUS_DATA_DIR.mkdir(parents=True, exist_ok=True)
+    basename = _CORPUS_DATA_BASENAMES[source]
+    projected = [{column: row[column] for column in columns} for row in rows]
+    (_CORPUS_DATA_DIR / f"{basename}.json").write_text(
+        json.dumps(projected, indent=2) + "\n", encoding="utf-8"
+    )
+    lines = ["\t".join(columns)]
+    lines.extend(
+        "\t".join(_tsv_safe(str(record[column])) for column in columns)
+        for record in projected
+    )
+    (_CORPUS_DATA_DIR / f"{basename}.tsv").write_text(
+        "\n".join(lines) + "\n", encoding="utf-8"
+    )
+
+
 def _write_stats(
     *,
     stats_file: Path,
@@ -788,18 +1032,18 @@ def main(argv: list[str]) -> int:
         ),
     )
     args = parser.parse_args(argv)
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
     if args.repo is not None and args.source != "github":
-        print(
-            f"--repo is only supported with --source github, not {args.source!r}",
-            file=sys.stderr,
+        logger.error(
+            "--repo is only supported with --source github, not %r", args.source
         )
         return 1
     if args.source == "github" and args.repo is not None:
         known_names = {name for name, _ in _corpus_sources()}
         if args.repo not in known_names:
             known = ", ".join(sorted(known_names))
-            print(f"unknown --repo {args.repo!r}; known: {known}", file=sys.stderr)
+            logger.error("unknown --repo %r; known: %s", args.repo, known)
             return 1
 
     _CORPUS_ROOT.mkdir(parents=True, exist_ok=True)
@@ -811,120 +1055,96 @@ def main(argv: list[str]) -> int:
     combined = args.source == "combined"
     sources_to_walk = _COMBINED_SUB_SOURCES if combined else (args.source,)
     if "toolshed" in sources_to_walk and not _TOOLSHED_ROOT.exists():
-        print(
-            f"no toolshed corpus at {_TOOLSHED_ROOT.relative_to(_REPO_ROOT)}; "
-            "run scripts/fetch_toolshed.py first",
-            file=sys.stderr,
+        logger.error(
+            "no toolshed corpus at %s; run scripts/fetch_toolshed.py first",
+            _TOOLSHED_ROOT.relative_to(_REPO_ROOT),
         )
         return 1
     tools = 0
-    signatures: Counter[str] = Counter()
-    retained_signatures = _known_signatures()
-    retained: list[tuple[str, str, Path, str, str]] = []
     repo_tool_counts: list[tuple[str, str, int]] = []
-    declared_raw_counts: Counter[str] = Counter()
-    declared_expanded_counts: Counter[str] = Counter()
-    newest_valid_counts: Counter[str] = Counter()
-    crosstab: Counter[tuple[str, str]] = Counter()
-    macro_counts: Counter[bool] = Counter()
-    contiguity_counts: Counter[bool] = Counter()
-    # Combined-mode bookkeeping: dedup tools by sha256 of their bytes, and
-    # track per-source kept / duplicate counts for the artifact's Sources
-    # table. Empty in single-source modes.
-    seen_hashes: set[str] = set()
-    source_unique_counts: Counter[str] = Counter()
-    source_duplicate_counts: Counter[str] = Counter()
+    state = _SweepState(retained_signatures=_known_signatures())
+    need_sha = combined or collect_stats
+    # args.repo is only reachable here when args.source == "github"
+    # (the early CLI guard rejects it for any other source), so combined
+    # mode always sees args.repo is None — no need to mask it.
     for source_label, display_name, repo_dir, version in _iter_sources(
-        sources_to_walk, repo_filter=args.repo if not combined else None
+        sources_to_walk, repo_filter=args.repo
     ):
         repo_tool_count = 0
         for path in sorted(repo_dir.rglob("*.xml")):
             if args.limit and tools >= args.limit:
                 break
-            if not path.is_file():
-                continue  # broken symlink or non-regular file — not a tool
-            if combined and _is_duplicate(
+            if not _process_path(
                 path,
-                source_label,
-                seen_hashes=seen_hashes,
-                duplicate_counts=source_duplicate_counts,
+                source_label=source_label,
+                display_name=display_name,
+                repo_dir=repo_dir,
+                version=version,
+                state=state,
+                combined=combined,
+                collect_stats=collect_stats,
+                need_sha=need_sha,
             ):
-                continue
-            status, detail, signature, stats = _exercise(
-                path, collect_stats=collect_stats
-            )
-            if status == "skip":
                 continue
             tools += 1
             repo_tool_count += 1
-            source_unique_counts[source_label] += 1
-            if stats is not None:
-                declared_raw_counts[stats.profile_raw] += 1
-                declared_expanded_counts[stats.profile_expanded] += 1
-                newest_valid_counts[stats.newest_valid] += 1
-                crosstab[(stats.profile_expanded, stats.newest_valid)] += 1
-                macro_counts[stats.has_macros] += 1
-                contiguity_counts[stats.contiguous] += 1
             if tools % 500 == 0:
-                print(f"  ... {tools} tools", file=sys.stderr)
-            if status == "ok":
-                continue
-            signatures[signature] += 1
-            if signature in retained_signatures:
-                continue
-            retained_signatures.add(signature)
-            # display_name may carry a '/' for toolshed (owner/name);
-            # sanitize so retained fixture directories stay flat.
-            dest = _retain(path, display_name.replace("/", "__"))
-            relative = path.relative_to(repo_dir)
-            retained.append((dest.name, display_name, relative, version, signature))
-            print(
-                f"\n{status.upper()}  [{display_name}] {signature}\n  "
-                f"{relative}\n  retained -> {dest}"
-            )
-            print("  " + detail.strip().replace("\n", "\n  "))
+                logger.info("... %d tools", tools)
         repo_tool_counts.append((display_name, version, repo_tool_count))
         if args.limit and tools >= args.limit:
             break
 
-    print(f"\n--- swept {tools} tools ---")
-    for signature, count in signatures.most_common():
-        print(f"  {count:6d}  {signature}")
-    if "non-contiguous" in signatures:
-        print(
-            "  note: non-contiguous validity is an expected real-world property,"
-            " not a library bug — newest_valid_profile handles it."
+    logger.info("swept %d tools", tools)
+    for signature, count in state.signatures.most_common():
+        logger.info("  %6d  %s", count, signature)
+    if "non-contiguous" in state.signatures:
+        logger.info(
+            "note: non-contiguous validity is an expected real-world property, "
+            "not a library bug — newest_valid_profile handles it."
         )
-    if retained:
-        _append_provenance(retained)
-        print(
-            f"\nretained {len(retained)} new regression fixture(s) under {_REGRESSIONS}"
+    if state.retained:
+        _append_provenance(state.retained)
+        logger.info(
+            "retained %d new regression fixture(s) under %s",
+            len(state.retained),
+            _REGRESSIONS,
         )
     stats_path = stats_file.relative_to(_REPO_ROOT)
+    data_basename = _CORPUS_DATA_BASENAMES[args.source]
+    data_dir_rel = _CORPUS_DATA_DIR.relative_to(_REPO_ROOT)
     if args.no_stats:
         pass
     elif args.limit or args.repo:
-        print(
-            f"\ncorpus stats not regenerated: partial sweep "
-            f"(--limit or --repo). Run the full sweep to refresh {stats_path}."
+        logger.info(
+            "corpus stats not regenerated: partial sweep (--limit or --repo). "
+            "Run the full sweep to refresh %s and %s/%s.{json,tsv}.",
+            stats_path,
+            data_dir_rel,
+            data_basename,
         )
     else:
         _write_stats(
             stats_file=stats_file,
             source=args.source,
             repos=repo_tool_counts,
-            declared_raw_counts=declared_raw_counts,
-            declared_expanded_counts=declared_expanded_counts,
-            newest_valid_counts=newest_valid_counts,
-            crosstab=crosstab,
-            macro_counts=macro_counts,
-            contiguity_counts=contiguity_counts,
+            declared_raw_counts=state.declared_raw_counts,
+            declared_expanded_counts=state.declared_expanded_counts,
+            newest_valid_counts=state.newest_valid_counts,
+            crosstab=state.crosstab,
+            macro_counts=state.macro_counts,
+            contiguity_counts=state.contiguity_counts,
             include_raw=args.include_raw_profile,
             total=tools,
-            source_unique_counts=source_unique_counts,
-            source_duplicate_counts=source_duplicate_counts,
+            source_unique_counts=state.source_unique_counts,
+            source_duplicate_counts=state.source_duplicate_counts,
         )
-        print(f"\ncorpus stats -> {stats_path}")
+        _write_corpus_data(
+            rows=state.rows,
+            source=args.source,
+            include_profile_columns=args.source == "combined",
+        )
+        logger.info("corpus stats -> %s", stats_path)
+        logger.info("corpus data  -> %s/%s.{json,tsv}", data_dir_rel, data_basename)
     return 0
 
 

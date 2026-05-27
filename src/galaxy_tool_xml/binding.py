@@ -101,7 +101,7 @@ def _read_source(source: Source) -> tuple[bytes, Path | None, str]:
     """Read a source into ``(xml_bytes, source_path, source_label)``."""
     if isinstance(source, bytes):
         return source, None, _STRING_SOURCE
-    if isinstance(source, (str, Path)):
+    if isinstance(source, str | Path):
         path = Path(source)
         return path.read_bytes(), path, str(path)
     return source.read(), None, _STRING_SOURCE
@@ -126,6 +126,9 @@ def _parse_bytes(
     log is snapshotted immediately, before anything else touches the parser.
     """
     parser = etree.XMLParser(recover=True, strip_cdata=False)
+    # third-party API: no LBYL form — lxml's recover=True parser still raises
+    # XMLSyntaxError on pathological input that the recovery path cannot
+    # salvage (e.g., a completely binary file with no XML structure).
     try:
         root = etree.fromstring(xml_bytes, parser)
     except etree.XMLSyntaxError:
@@ -229,7 +232,7 @@ def validate_tool(
         result = parse_tool(target)
         document = result.document
         syntax_errors = result.syntax_errors
-        path_target = Path(target) if isinstance(target, (str, Path)) else None
+        path_target = Path(target) if isinstance(target, str | Path) else None
 
     if document is None:
         return ValidationResult(
@@ -298,7 +301,7 @@ def newest_valid_profile(target: Source | ToolDocument) -> str | None:
     # Prefer a filesystem path: validate_tool then resolves macros via
     # expand_from_path, which follows transitive <import>s. A ToolDocument may
     # carry a mutated tree, so it is validated as-is.
-    if isinstance(target, (str, Path)):
+    if isinstance(target, str | Path):
         probe: Source | ToolDocument = Path(target)
     elif isinstance(target, ToolDocument):
         probe = target

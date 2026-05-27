@@ -7,8 +7,8 @@
 latest** vendored XSD (`galaxy-26.0`). A tool of any profile is bound leniently
 against that single latest-XSD model.
 
-We want a **separate generated model package per vendored XSD version** (27,
-Galaxy 16.10 → 26.0) so a future downstream project can **convert a tool XML
+We want a **separate generated model package per vendored XSD version** (28,
+Galaxy 16.10 → 26.1) so a future downstream project can **convert a tool XML
 from one XSD version to the next** — it needs a faithful typed view of *each*
 schema release. The library keeps **no serializer**: the converter mutates the
 lxml tree; the per-version models are read-only views for understanding each
@@ -17,7 +17,7 @@ version.
 ## Approach
 
 Generate a complete xsdata model package for **every** vendored XSD version
-instead of only the latest. The 27 packages are **generated at build time and
+instead of only the latest. The 28 packages are **generated at build time and
 not committed** — the build backend moves from `uv_build` to **hatchling** with a
 custom build hook that runs the codegen for both wheel builds and editable
 installs.
@@ -27,7 +27,7 @@ installs.
 optional `version=` override. Two registry helpers — `tool_class(version)` and
 `model_module(version)` — give the downstream converter direct access to any
 version's typed classes. `model()`'s return type is a generated `AnyTool` union
-over all 27 `Tool` classes. `corrections.py` likewise checks a tool against its
+over all 28 `Tool` classes. `corrections.py` likewise checks a tool against its
 own release's vocabulary.
 
 A new `newest_valid_profile(tool)` reports the newest vendored profile a tool
@@ -53,13 +53,13 @@ src/galaxy_tool_xml/
     │                      "__init__ exposes no re-exports" convention)
     ├── registry.py        NEW, hand-written, PUBLIC — version→model lookups
     ├── any_tool.py        GENERATED, gitignored — `AnyTool` union (type-only use)
-    └── v16_10/ … v26_0/   GENERATED, gitignored — xsdata output, one pkg/version
+    └── v16_10/ … v26_1/   GENERATED, gitignored — xsdata output, one pkg/version
 hatch_build.py             NEW, repo root — thin hatchling hook (~20 lines)
 scripts/corpus_check.py    NEW — real-world tools-iuc corpus sweep
 tests/data/regressions/    NEW dir — real-world tools retained as regression fixtures
 ```
 
-Version → package slug: `"v" + version.replace(".", "_")` (`26.0`→`v26_0`),
+Version → package slug: `"v" + version.replace(".", "_")` (`26.1`→`v26_1`),
 defined once as `version_to_module()` in `registry.py`.
 
 ## Implementation
@@ -78,7 +78,7 @@ scope — **no hatchling, and no xsdata until the `__main__` path** — so
   version_to_module(version)` and `output.unnest_classes = True` (unconditional —
   required for Galaxy 24.2+, harmless older), `chdir`s to `output_root`, runs
   `ResourceTransformer`. xsdata is imported only here.
-- `_generate_one(version, *, output_root)` — runs that entry point in a fresh
+- `generate_one(version, *, output_root)` — runs that entry point in a fresh
   subprocess, with `PYTHONPATH` set to `src/` so it imports `galaxy_tool_xml`
   even at build time, before the package is installed. A fresh process per
   version is mandatory — xsdata caches its resolved output path within a process.
@@ -87,9 +87,9 @@ scope — **no hatchling, and no xsdata until the `__main__` path** — so
   `models/v*/` package and `any_tool.py` exist and not `force`, return at once (a
   new vendored XSD → its dir missing → full rebuild; a clean CI checkout → all
   missing → full rebuild). Otherwise `rmtree` stale `models/v*/`, run
-  `_generate_one(v, output_root=src)` for all 27 versions in parallel via a
+  `generate_one(v, output_root=src)` for all 28 versions in parallel via a
   `ThreadPoolExecutor` (threads block on subprocesses), then write
-  `models/any_tool.py` (`AnyTool = v16_10…Tool | … | v26_0…Tool`).
+  `models/any_tool.py` (`AnyTool = v16_10…Tool | … | v26_1…Tool`).
 - `clean_generated()` — `rmtree` `models/v*/` and remove `any_tool.py`.
 
 `output_root` is `src/` for builds and `regenerate.py`; the codegen test points
@@ -148,7 +148,7 @@ Drop `from galaxy_tool_xml.models import Tool`. Import `resolve_profile`
 (`profiles.py`) and `tool_class` (`registry.py`); import `AnyTool` **only** under
 `if TYPE_CHECKING:` from `models.any_tool` — `document.py` has `from __future__
 import annotations`, so the annotation is a string and no generated module is
-imported at runtime (binding stays lazy: one version's package, never all 27).
+imported at runtime (binding stays lazy: one version's package, never all 28).
 
 ```python
 def model(self, *, version: str | None = None) -> AnyTool:
@@ -189,7 +189,7 @@ guaranteed contiguous — the corpus sweep finds real tools with gaps — so a
 newest-first scan that stops at the first pass is the only correct approach (a
 valid/invalid probe cannot tell "too old" from "too new", and binary search
 would need that). The scan is O(1) when the tool validates at the latest profile
-— the common case for modern tools; the worst case is 27 validations, and
+— the common case for modern tools; the worst case is 28 validations, and
 `compiled_schema` is `@cache`d so repeated calls across tools never recompile.
 
 ### 9. `scripts/regenerate.py`
@@ -201,7 +201,7 @@ where the package is installed editable.
 ### 10. Tests
 
 - `tests/test_codegen.py` — keep the `slow` per-version sweep; call
-  `_codegen._generate_one(version, output_root=tmp_path)` so each version is
+  `_codegen.generate_one(version, output_root=tmp_path)` so each version is
   generated in its own subprocess into a tempdir, then `py_compile` the output —
   the real production path, with no pollution of `src/`.
 - `tests/test_models.py` (new, default suite) — over `available_profiles()`:
@@ -252,12 +252,12 @@ keep the fixture so the bug can never silently return.
   `from galaxy_tool_xml.models.registry import model_module, tool_class`, and
   `newest_valid_profile` to the `binding` line; note `model()` is profile-aware
   with a `version=` override. Refresh the Architecture paragraph.
-- `CLAUDE.md` — `models/` is now 27 per-version generated packages plus
+- `CLAUDE.md` — `models/` is now 28 per-version generated packages plus
   hand-written `__init__.py`/`registry.py`, generated at build time, not
   committed; binding is now profile-aware (today's "binding is not
   [profile-aware]" sentence becomes wrong); `corrections.py` is profile-aware;
   the sanctioned re-export exception is now the generated `v*/__init__.py` files;
-  Commands/`regenerate.py` regenerates all 27; note the hatchling backend,
+  Commands/`regenerate.py` regenerates all 28; note the hatchling backend,
   `_codegen.py`, and the `corpus_check.py` QA script.
 
 ### 13. Git hygiene
@@ -292,7 +292,7 @@ clone). Committed under `models/` afterward: only `__init__.py` and `registry.py
 | `scripts/regenerate.py` | Thin wrapper over `regenerate_all_models` |
 | `scripts/corpus_check.py` | **New** — real-world tools-iuc corpus sweep (§11) |
 | `pyproject.toml` | Backend → hatchling; hook/artifacts config; narrowed excludes |
-| `tests/test_codegen.py` | Call `_codegen._generate_one` |
+| `tests/test_codegen.py` | Call `_codegen.generate_one` |
 | `tests/test_models.py` | **New** — per-version import + `model()` selection |
 | `tests/test_corrections.py` | Profile-aware vocabulary case |
 | `tests/test_validate.py` | `newest_valid_profile` cases + validity-matrix test |
@@ -303,7 +303,7 @@ clone). Committed under `models/` afterward: only `__init__.py` and `registry.py
 ## Risks & assumptions
 
 - **Fresh-clone dev depends on the build hook.** `uv sync` builds an editable
-  wheel, runs the hook, generates all 27 packages — first run is slow (parallel,
+  wheel, runs the hook, generates all 28 packages — first run is slow (parallel,
   but still ~minutes). The existence-skip makes later syncs instant; if a sync
   ever leaves models missing, `uv run python scripts/regenerate.py` regenerates
   them.
@@ -311,13 +311,13 @@ clone). Committed under `models/` afterward: only `__init__.py` and `registry.py
   `ruff`, `pytest` need `models/v*/` + `any_tool.py` present.
 - **`xsdata[lxml]` must be in `[build-system] requires`** — the build env is
   isolated; omitting it breaks the hook.
-- **`AnyTool` requires narrowing** — a union of 27 distinct `Tool` classes only
+- **`AnyTool` requires narrowing** — a union of 28 distinct `Tool` classes only
   exposes their common attribute subset until a caller narrows by version. This
   is the precise type the converter wants.
 - **`newest_valid_profile` is a linear scan** — assumption-free. The corpus
   sweep confirmed validity is *not* contiguous (~4% of real tools have gaps),
   so a binary search would be wrong; the newest-first scan is correct regardless.
-- **Footprint** — ~27 × ~300 KB ≈ 8–9 MB of generated Python; repo unaffected
+- **Footprint** — ~28 × ~300 KB ≈ 8–9 MB of generated Python; repo unaffected
   (gitignored), wheel roughly triples.
 - Each xsdata run is its own subprocess (`python -m galaxy_tool_xml._codegen`) —
   sharing a process reintroduces xsdata's output-path caching bug. The subprocess
@@ -328,7 +328,7 @@ clone). Committed under `models/` afterward: only `__init__.py` and `registry.py
 ## Verification
 
 1. `rm -rf src/galaxy_tool_xml/models/v* src/galaxy_tool_xml/models/any_tool.py`,
-   then `uv sync` → all 27 `models/v*/` packages + `any_tool.py` reappear.
+   then `uv sync` → all 28 `models/v*/` packages + `any_tool.py` reappear.
 2. `uv run pytest` → `test_models.py`, `test_corrections.py`, `test_validate.py`,
    `test_binding.py`, `test_regressions.py` pass.
 3. `uv run pytest -m slow` → codegen sweep + validity-matrix test pass.
@@ -339,7 +339,7 @@ clone). Committed under `models/` afterward: only `__init__.py` and `registry.py
    `v24_0`; `newest_valid_profile(tool)` returns the expected ceiling.
 6. `uv run galaxy-tool-xml validate tests/data/representative_tool.xml` and
    `suggest …` → CLI still works.
-7. `uv build` → `unzip -l dist/*.whl` shows all 27 `models/v*/` packages,
+7. `uv build` → `unzip -l dist/*.whl` shows all 28 `models/v*/` packages,
    `any_tool.py`, and the `schema/` XSDs; build a wheel from the sdist to confirm
    the hook runs there too.
 8. `uv run python scripts/corpus_check.py` → sweep galaxyproject/tools-iuc;

@@ -18,6 +18,7 @@ retrieval time.
 
 | Version | Release branch | Commit | Path in repo | Source URL | Retrieved |
 | --- | --- | --- | --- | --- | --- |
+| 26.1 | release_26.1 | 0040ec81df48eb2684447837627fb4f76d013263 | `lib/galaxy/tool_util/xsd/galaxy.xsd` | https://raw.githubusercontent.com/galaxyproject/galaxy/release_26.1/lib/galaxy/tool_util/xsd/galaxy.xsd | 2026-05-27 |
 | 26.0 | release_26.0 | cb36b7065a5736135f6ec56b16aab792176fce55 | `lib/galaxy/tool_util/xsd/galaxy.xsd` | https://raw.githubusercontent.com/galaxyproject/galaxy/release_26.0/lib/galaxy/tool_util/xsd/galaxy.xsd | 2026-05-22 |
 | 25.1 | release_25.1 | ad8e40de4a42e80e4064716d5342ad0952f53ce2 | `lib/galaxy/tool_util/xsd/galaxy.xsd` | https://raw.githubusercontent.com/galaxyproject/galaxy/release_25.1/lib/galaxy/tool_util/xsd/galaxy.xsd | 2026-05-22 |
 | 25.0 | release_25.0 | 48c78404f68e4e081ae0dbc011c5dc99dbc66357 | `lib/galaxy/tool_util/xsd/galaxy.xsd` | https://raw.githubusercontent.com/galaxyproject/galaxy/release_25.0/lib/galaxy/tool_util/xsd/galaxy.xsd | 2026-05-22 |
@@ -49,6 +50,6 @@ retrieval time.
 ## Third-party attribution
 
 These XSD files are extracted verbatim from the Galaxy project
-(`galaxyproject/galaxy`, <https://github.com/galaxyproject/galaxy>) and remain
-subject to that project's license. They are redistributed here unmodified as a
-convenience for offline, profile-aware validation.
+(`galaxyproject/galaxy`, <https://github.com/galaxyproject/galaxy>) and
+remain subject to that project's license. They are redistributed here
+unmodified as a convenience for offline, profile-aware validation.

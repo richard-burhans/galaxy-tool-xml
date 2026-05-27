@@ -130,6 +130,29 @@ def _vocabulary(model_class: type) -> _Vocabulary:
     )
 
 
+def _record(
+    corrections: list[Correction],
+    *,
+    source: etree._Element,
+    context_tag: str,
+    kind: str,
+    found: str,
+    suggested: str,
+    attribute: str | None = None,
+) -> None:
+    """Append one Correction; ``source`` supplies the line number."""
+    corrections.append(
+        Correction(
+            line=source.sourceline or 0,
+            element=context_tag,
+            kind=kind,
+            found=found,
+            suggested=suggested,
+            attribute=attribute,
+        )
+    )
+
+
 def _check_attributes(
     element: etree._Element, model_class: type, corrections: list[Correction]
 ) -> None:
@@ -140,14 +163,13 @@ def _check_attributes(
         if name not in vocabulary.attributes:
             match = get_close_matches(name, valid_names, n=1, cutoff=_CUTOFF)
             if match:
-                corrections.append(
-                    Correction(
-                        line=element.sourceline or 0,
-                        element=element.tag,
-                        kind="attribute",
-                        found=name,
-                        suggested=match[0],
-                    )
+                _record(
+                    corrections,
+                    source=element,
+                    context_tag=element.tag,
+                    kind="attribute",
+                    found=name,
+                    suggested=match[0],
                 )
             continue
         legal = vocabulary.attributes[name]
@@ -156,15 +178,14 @@ def _check_attributes(
         if value not in legal:
             match = get_close_matches(value, legal, n=1, cutoff=_CUTOFF)
             if match:
-                corrections.append(
-                    Correction(
-                        line=element.sourceline or 0,
-                        element=element.tag,
-                        kind="enum_value",
-                        found=value,
-                        suggested=match[0],
-                        attribute=name,
-                    )
+                _record(
+                    corrections,
+                    source=element,
+                    context_tag=element.tag,
+                    kind="enum_value",
+                    found=value,
+                    suggested=match[0],
+                    attribute=name,
                 )
 
 
@@ -174,6 +195,9 @@ def _walk(
     """Descend the tree and the model classes together, collecting corrections."""
     _check_attributes(element, model_class, corrections)
     vocabulary = _vocabulary(model_class)
+    # Hoisted out of the child loop: list(dict) only depends on the model class,
+    # which is invariant across this element's children.
+    element_names = list(vocabulary.elements)
     for child in element:
         if not isinstance(child.tag, str):
             continue  # comment or processing instruction
@@ -184,18 +208,15 @@ def _walk(
             if child_class is not None:
                 _walk(child, child_class, corrections)
         elif not vocabulary.has_wildcard:
-            match = get_close_matches(
-                child.tag, list(vocabulary.elements), n=1, cutoff=_CUTOFF
-            )
+            match = get_close_matches(child.tag, element_names, n=1, cutoff=_CUTOFF)
             if match:
-                corrections.append(
-                    Correction(
-                        line=child.sourceline or 0,
-                        element=element.tag,
-                        kind="element",
-                        found=child.tag,
-                        suggested=match[0],
-                    )
+                _record(
+                    corrections,
+                    source=child,
+                    context_tag=element.tag,
+                    kind="element",
+                    found=child.tag,
+                    suggested=match[0],
                 )
 
 

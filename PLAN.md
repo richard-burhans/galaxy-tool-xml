@@ -1,13 +1,19 @@
 # galaxy-tool-xml — Implementation Plan
 
-> **Status (2026-05-22): FINAL — approved, ready to implement. Implementation not yet started.**
-> This repository contains no code yet — only this `PLAN.md`. The plan below is finalized and
-> approved: it was refined in a planning session that resolved macro handling, added
-> `galaxy-util` as a dependency, and verified the plan's external assumptions.
+> **Status: SUPERSEDED — historical document, retained for reference.**
 >
-> **To resume:** open this repo in Claude Code and say *"let's implement galaxy-tool-xml — see
-> PLAN.md"*. Start at step 1 and work through the numbered steps in order. The plan is final —
-> do not re-enter planning unless a step proves genuinely unworkable.
+> The plan below was the initial design from 2026-05-22, before implementation began. The
+> project has since been fully implemented and has evolved beyond this plan in several
+> material ways (per-version typed models replacing the single-latest model, `hatchling`
+> build backend replacing `uv_build`, the corpus stats system, and the `valid_<profile>`
+> validity columns, among others). **Do not implement against this file.** For the current
+> state and the reasoning behind every divergence, see:
+>
+> - `CLAUDE.md` — current architecture and conventions
+> - `README.md` — current public API
+> - `docs/decisions.md` — assumptions, design decisions, and testing-derived data
+> - `docs/per-version-models-plan.md` — the post-PLAN refactor that introduced per-version models
+> - `docs/codemod-architecture.md` — the planned tier-2 codemod package this library feeds
 
 ---
 

@@ -56,17 +56,31 @@ def latest_profile() -> str:
     return latest
 
 
+@cache
+def _ordered_versions() -> tuple[tuple[Version, str], ...]:
+    """Return ``(parsed, original)`` pairs for every vendored version, sorted.
+
+    Cached so ``_nearest_profile`` doesn't re-sort on every call —
+    ``available_profiles()`` is also stable for the process lifetime.
+    """
+    return tuple(sorted((Version(version), version) for version in _schemas()))
+
+
 def _nearest_profile(profile: str) -> str:
     """Return the newest vendored version not newer than ``profile``.
 
     An unparseable profile, or one newer than every vendored version, resolves
     to the latest; one older than every vendored version resolves to the oldest.
     """
+    # third-party API: no LBYL form — packaging exposes no `is_valid_version`
+    # predicate, so the InvalidVersion catch is the only way to detect a
+    # malformed `profile` (e.g., a macro token like "@PROFILE@" that survived
+    # expansion failure).
     try:
         target = Version(profile)
     except InvalidVersion:
         return latest_profile()
-    ordered = sorted((Version(version), version) for version in _schemas())
+    ordered = _ordered_versions()
     not_newer = [original for parsed, original in ordered if parsed <= target]
     if not_newer:
         return not_newer[-1]
@@ -135,6 +149,10 @@ def compiled_schema(version: str) -> etree.XMLSchema:
         / schemas[version]["file"]
     )
     schema_root = etree.fromstring(resource.read_bytes())
+    # third-party API: no LBYL form — libxml2 exposes no way to predict
+    # the non-deterministic-content-model failure that Galaxy 19.05–23.0
+    # XSDs hit; the retry-with-fix is the same workaround Galaxy itself
+    # applied in release 23.1.
     try:
         return etree.XMLSchema(schema_root)
     except etree.XMLSchemaParseError:

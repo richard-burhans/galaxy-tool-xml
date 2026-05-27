@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from galaxy_tool_xml._codegen import _generate_one
+from galaxy_tool_xml._codegen import generate_one
 from galaxy_tool_xml.models.registry import version_to_module
 from galaxy_tool_xml.profiles import available_profiles
 
@@ -18,7 +18,7 @@ from galaxy_tool_xml.profiles import available_profiles
 @pytest.mark.slow
 @pytest.mark.parametrize("version", available_profiles())
 def test_codegen_succeeds_for_every_vendored_xsd(version: str, tmp_path: Path) -> None:
-    _generate_one(version, models_dir=tmp_path)
+    generate_one(version, models_dir=tmp_path)
     package = tmp_path / version_to_module(version)
     assert (package / "galaxy.py").is_file()
     assert (package / "__init__.py").is_file()

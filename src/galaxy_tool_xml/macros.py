@@ -62,6 +62,28 @@ def strip_macros(tree: etree._ElementTree) -> etree._ElementTree:
     return copied
 
 
+def _load_with_references(
+    file_path: Path, *, error_source: str | None, log_label: str
+) -> tuple[etree._ElementTree | None, list[MacroError]]:
+    """Call ``galaxy.util.xml_macros.load_with_references`` and catch anything.
+
+    Both ``expand_from_path`` and ``expand_from_tree`` need the same
+    "call the adapter, log a warning on failure, wrap the failure as a
+    ``MacroError``" sequence; this helper carries the only sanctioned
+    broad-except in the module so the caller sites stay one-liners.
+    """
+    # third-party API: no LBYL form — galaxy.util.xml_macros raises a wide
+    # variety of internal exceptions (cycle, missing macro, malformed XML)
+    # and isolating that here is the whole point of the macros.py adapter.
+    try:
+        expanded, _imported = load_with_references(str(file_path))
+    except Exception as error:  # noqa: BLE001 — galaxy.util adapter boundary
+        logger.warning("macro expansion failed for %s: %s", log_label, error)
+        failure = MacroError(f"macro expansion failed: {error}", source=error_source)
+        return None, [failure]
+    return expanded, []
+
+
 def expand_from_path(
     path: Path,
 ) -> tuple[etree._ElementTree | None, list[MacroError]]:
@@ -70,12 +92,7 @@ def expand_from_path(
     ``<import>``s resolve against the file's own directory. Returns the expanded
     tree (or ``None`` on failure) and any errors.
     """
-    try:
-        expanded, _imported = load_with_references(str(path))
-    except Exception as error:  # noqa: BLE001 — adapter boundary for an internal API
-        logger.warning("macro expansion failed for %s: %s", path, error)
-        return None, [MacroError(f"macro expansion failed: {error}", source=str(path))]
-    return expanded, []
+    return _load_with_references(path, error_source=str(path), log_label=str(path))
 
 
 def expand_from_tree(
@@ -94,11 +111,11 @@ def expand_from_tree(
         tool_path = tmp_dir / "tool.xml"
         tool_path.write_bytes(etree.tostring(root))
         errors.extend(_stage_imports(root, source_dir=source_dir, tmp_dir=tmp_dir))
-        try:
-            expanded, _imported = load_with_references(str(tool_path))
-        except Exception as error:  # noqa: BLE001 — adapter boundary for an internal API
-            logger.warning("macro expansion failed for in-memory tree: %s", error)
-            errors.append(MacroError(f"macro expansion failed: {error}"))
+        expanded, expand_errors = _load_with_references(
+            tool_path, error_source=None, log_label="in-memory tree"
+        )
+        errors.extend(expand_errors)
+        if expanded is None:
             return None, errors
     return expanded, errors
 
@@ -175,9 +192,10 @@ def _stage_import(
     destination = tmp_dir / relative_path
     destination.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy(source, destination)
-    # recover=True handles most malformed XML, but pathological inputs (e.g.
-    # an empty file with nothing to recover) still raise; treat as un-stageable
-    # — the missing root just suppresses transitive <import> staging.
+    # third-party API: no LBYL form — recover=True handles most malformed
+    # XML, but pathological inputs (an empty file with nothing to recover)
+    # still raise; treat as un-stageable. The missing root just suppresses
+    # transitive <import> staging.
     try:
         staged_root = etree.parse(
             str(destination), etree.XMLParser(recover=True)

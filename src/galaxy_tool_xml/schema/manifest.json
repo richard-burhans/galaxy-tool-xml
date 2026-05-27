@@ -1,5 +1,5 @@
 {
-  "latest": "26.0",
+  "latest": "26.1",
   "schemas": {
     "16.10": {
       "commit": "267037fa7a3488cd4e24a5fce89eb84326669005",
@@ -216,6 +216,14 @@
       "release_branch": "release_26.0",
       "retrieved": "2026-05-22",
       "version": "26.0"
+    },
+    "26.1": {
+      "commit": "0040ec81df48eb2684447837627fb4f76d013263",
+      "file": "galaxy-26.1.xsd",
+      "path_in_repo": "lib/galaxy/tool_util/xsd/galaxy.xsd",
+      "release_branch": "release_26.1",
+      "retrieved": "2026-05-27",
+      "version": "26.1"
     }
   }
 }

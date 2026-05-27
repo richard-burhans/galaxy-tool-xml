@@ -29,7 +29,7 @@ codemod harness, context, matchers, and `CodemodTest`. Drop
 `leave_X(original, updated) -> X`, `with_changes`, `RemoveFromParent`,
 `FlattenSentinel`, and `MaybeSentinel` — those presuppose immutable
 nodes and don't fit lxml. The node *taxonomy* diverges (Galaxy XML
-elements, not Python grammar; and there are 27 of them, one per
+elements, not Python grammar; and there are 28 of them, one per
 vendored profile). The current `galaxy-tool-xml` already supplies the
 foundational primitives the codemod tool needs; add 3 small,
 non-breaking items here and put everything else in the new tool. Do
@@ -81,7 +81,7 @@ pure-functional semantics. Document this loudly in the codemod tool's
 authoring guide — it is the single biggest source of expectation
 mismatch.
 
-### Node taxonomy — per-XSD-type class explosion, ×27 profiles
+### Node taxonomy — per-XSD-type class explosion, ×28 profiles
 
 The xsdata-generated typed model is shaped by **XSD complex types**:
 xsdata emits one class per complex type, not per element tag. Because
@@ -95,11 +95,11 @@ give shorter names but the multiplicity would remain.
 
 A concrete consequence: there is no single `When` class.
 `models/v23_2/galaxy.py` exposes three (`ChangeFormatWhen`,
-`ActionsConditionalWhen`, `ConditionalWhen`). `models/v26_0/galaxy.py`
-has 172 classes total, up from 98 in `v16_10`. The codemod tool sees
+`ActionsConditionalWhen`, `ConditionalWhen`). `models/v26_1/galaxy.py`
+has 177 classes total, up from 100 in `v16_10`. The codemod tool sees
 one model package per vendored profile (`models/v16_10` …
-`models/v26_0`), via `tool_class(version)`, so a uniform cursor
-surface either pins to one profile or normalises across all 27.
+`models/v26_1`), via `tool_class(version)`, so a uniform cursor
+surface either pins to one profile or normalises across all 28.
 
 Two design responses:
 
@@ -111,7 +111,7 @@ Two design responses:
       collapses parent-specialized types into single conceptual nodes
       (`When`, `Param`, etc.) with a `parent_context` accessor, and
       bridges the per-profile class differences. Real work to author
-      and maintain — scaling the cursor layer across 27 profiles is
+      and maintain — scaling the cursor layer across 28 profiles is
       its own design question, deferred here.
 
 Recommend (b) as the long-term direction, (a) as an acceptable v0. This
@@ -245,7 +245,7 @@ internals for, expose as a real public API. Public-API budget in
 | 1 | **Macro file resolution** — given a `ToolDocument`, return the set of `Path`s involved (the tool + every transitively-imported macro file). Codemods that touch macros need this to know which files to edit. | `src/galaxy_tool_xml/macros.py` | **now** |
 | 2 | **Macro provenance per element** — for each element in an expanded tree, record which source file (and which macro definition) it came from. Lets codemods decide "edit the macro vs. inline vs. refuse." Side table keyed by a stable identifier: `id(element)` is fine within a single process but breaks across a tier-3 round-trip, so the API should accept either a cursor (in-process) or a path-based locator (cross-process). | `src/galaxy_tool_xml/macros.py` | later (wait for a codemod that needs it) |
 | 3 | **Document the trivia contract** in `README.md` Architecture section. Codemod authors need to know what survives the parse → mutate → re-parse cycle (structure, attrs & order, comments, CDATA, text, encoding, `sourceline`) and what does not (indentation, blank lines, quote style, empty-element shorthand, attribute spacing, macro provenance until item 2 ships). | `README.md` | **now** |
-| 4 | **Pin the trivia contract in tests** — extend `scripts/corpus_check.py::_check_roundtrip` with explicit asserts for each preserved item, so a regression in `galaxy-tool-xml` cannot silently break the codemod tool's assumptions. | `scripts/corpus_check.py` | **now** |
+| 4 | **Pin the trivia contract in tests** — extend `scripts/corpus_check.py::check_roundtrip` with explicit asserts for each preserved item, so a regression in `galaxy-tool-xml` cannot silently break the codemod tool's assumptions. | `scripts/corpus_check.py` | **now** |
 
 Visitor/transformer base classes do **not** live in this repo — they
 belong in the codemod tool, on top of the typed model, because the visitor
